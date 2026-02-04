@@ -7,8 +7,8 @@ GPS::GPS(HardwareSerial &uart) : _uart(uart) {
 }
 
 void GPS::begin(uint32_t baud) {
-    // ESP32 UART2: RX=16, TX=17
-    _uart.begin(baud, SERIAL_8N1, 16, 17);
+    // ESP32 UART2: RX=18, TX=17
+    _uart.begin(baud, SERIAL_8N1, 18, 17);
 }
 
 void GPS::convertToDMS(float ddmm, int &deg, int &min, float &sec) {

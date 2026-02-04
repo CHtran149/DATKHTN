@@ -2,6 +2,9 @@
 
 WindSpeed* WindSpeed::_instance = nullptr;
 
+// ===== Biến debounce =====
+static volatile uint32_t _lastTick = 0;   // thời điểm xung hợp lệ gần nhất (ms)
+
 // --- Constructor ---
 WindSpeed::WindSpeed(uint8_t chan_cam_bien, float duong_kinh_canh)
     : _chan_cam_bien(chan_cam_bien),
@@ -11,10 +14,16 @@ WindSpeed::WindSpeed(uint8_t chan_cam_bien, float duong_kinh_canh)
     _instance = this;
 }
 
-// --- Hàm ngắt ---
+// --- Hàm ngắt Hall ---
 void IRAM_ATTR WindSpeed::_ngatCamBien() {
-    if (_instance) {
+    if (!_instance) return;
+
+    uint32_t now = millis();
+
+    // Debounce 10 ms: 1 vòng quay = 1 xung
+    if (now - _lastTick > 10) {
         _instance->_dem_xung++;
+        _lastTick = now;
     }
 }
 
@@ -28,24 +37,27 @@ void WindSpeed::begin() {
     );
 }
 
-// --- Đọc và tính tốc độ gió ---
-WindSpeed::Data WindSpeed::read(uint32_t thoi_gian_do_ms) {
-    Data ket_qua;
-    _dem_xung = 0;
+WindSpeed::Data WindSpeed::read(uint32_t chu_ky_do_ms) {
+    static uint32_t lastTime = 0;
+    Data kq;
+    kq.valid = false;
 
-    delay(thoi_gian_do_ms);
+    if (millis() - lastTime >= chu_ky_do_ms) {
+        noInterrupts();
+        uint32_t so_xung = _dem_xung;
+        _dem_xung = 0;
+        interrupts();
 
-    noInterrupts();
-    uint32_t so_xung = _dem_xung;
-    interrupts();
+        float thoi_gian_s = chu_ky_do_ms / 1000.0f;
+        float chu_vi = PI * _duong_kinh_canh;
+        float quang_duong = so_xung * chu_vi;
 
-    float thoi_gian_s = thoi_gian_do_ms / 1000.0f;
-    float chu_vi = PI * _duong_kinh_canh;
-    float quang_duong = so_xung * chu_vi;
+        kq.toc_do_gio = quang_duong / thoi_gian_s;
+        kq.so_xung = so_xung;
+        kq.valid = true;
 
-    ket_qua.toc_do_gio = quang_duong / thoi_gian_s;
-    ket_qua.so_xung = so_xung;
-    ket_qua.valid = true;
+        lastTime = millis();
+    }
 
-    return ket_qua;
+    return kq;
 }
