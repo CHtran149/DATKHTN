@@ -11,6 +11,7 @@
 #include "TaskProcessing.h"
 #include "TaskFSM.h"
 #include "TaskComm.h"
+#include "Modem.h"
 
 /* ===== PIN DEFINE ===== */
 #define PIN_DHT        10
@@ -23,12 +24,17 @@
 #define GPS_RX         18
 #define GPS_TX         17
 
+#define GSM_RX         44
+#define GSM_TX         43
+
 /* ===== Object ===== */
 DHT11 dht(PIN_DHT);
 BMP180 bmp;
 WindSpeed wind(PIN_WIND, 0.1f);
 Rainfall rain(PIN_RAIN, 150.0f, 12000.0f, 10000);
 GPS gps(Serial1);
+// GSM modem instance (uses Serial2 by default) -- configure pins in setup()
+GSM modem(Serial2, 115200);
 
 /* ===== Queues & Events ===== */
 QueueHandle_t Queue_SensorRaw;
@@ -140,6 +146,8 @@ void setup() {
     wind.begin();
     rain.begin();
     gps.begin(115200);
+    // Khởi động modem SIMCOM trên cổng Serial2 với chân RX/TX đã cấu hình
+    modem.begin(GSM_RX, GSM_TX);
 
     Queue_SensorRaw = xQueueCreate(5, sizeof(SensorRaw_t));
     Queue_FSM_Input = xQueueCreate(5, sizeof(ProcessedSensor_t));

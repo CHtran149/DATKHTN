@@ -14,7 +14,7 @@ public:
     GSM(HardwareSerial &serial, uint32_t baudrate);
 
     void begin(int rxPin, int txPin);
-    void sendSMS(const char *phone, const char *message);
+    bool sendSMS(const char *phone, const char *message);
 };
 
 #endif
