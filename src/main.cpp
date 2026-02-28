@@ -7,6 +7,8 @@
 #include "WindSpeed.h"
 #include "Rainfall.h"
 #include "GPS.h"
+#include "SensorTypes.h"
+#include "TaskProcessing.h"
 
 /* ===== PIN DEFINE ===== */
 #define PIN_DHT        10
@@ -28,26 +30,6 @@ GPS gps(Serial1);
 
 /* ===== Queue ===== */
 QueueHandle_t Queue_SensorRaw;
-
-/* ===== Struct ===== */
-typedef struct {
-    float temperature;
-    float humidity;
-    float pressure;
-    float altitude;
-    float wind_speed;
-    float rainfall;
-
-    int lat_deg, lat_min;
-    float lat_sec;
-    char lat_dir;
-
-    int lon_deg, lon_min;
-    float lon_sec;
-    char lon_dir;
-
-    uint32_t timestamp;
-} SensorRaw_t;
 
 void Task_Sensor(void *pvParameters) {
     SensorRaw_t data;
@@ -167,6 +149,17 @@ void setup() {
     );
 
     Serial.println("Task_Sensor created");
+    xTaskCreatePinnedToCore(
+        Task_Processing,
+        "Task_Processing",
+        8192,
+        NULL,
+        1,
+        NULL,
+        1
+    );
+
+    Serial.println("Task_Processing created");
 }
 void loop() {
     // Empty. Tasks are running in FreeRTOS.
