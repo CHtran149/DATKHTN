@@ -9,6 +9,8 @@
 #include "GPS.h"
 #include "SensorTypes.h"
 #include "TaskProcessing.h"
+#include "TaskFSM.h"
+#include "TaskComm.h"
 
 /* ===== PIN DEFINE ===== */
 #define PIN_DHT        10
@@ -28,8 +30,11 @@ WindSpeed wind(PIN_WIND, 0.1f);
 Rainfall rain(PIN_RAIN, 150.0f, 12000.0f, 10000);
 GPS gps(Serial1);
 
-/* ===== Queue ===== */
+/* ===== Queues & Events ===== */
 QueueHandle_t Queue_SensorRaw;
+QueueHandle_t Queue_FSM_Input;
+QueueHandle_t Queue_Alert;
+EventGroupHandle_t Event_Weather;
 
 void Task_Sensor(void *pvParameters) {
     SensorRaw_t data;
@@ -137,6 +142,9 @@ void setup() {
     gps.begin(115200);
 
     Queue_SensorRaw = xQueueCreate(5, sizeof(SensorRaw_t));
+    Queue_FSM_Input = xQueueCreate(5, sizeof(ProcessedSensor_t));
+    Queue_Alert = xQueueCreate(5, sizeof(Alert_t));
+    Event_Weather = xEventGroupCreate();
 
     xTaskCreatePinnedToCore(
         Task_Sensor,
@@ -160,6 +168,27 @@ void setup() {
     );
 
     Serial.println("Task_Processing created");
+    xTaskCreatePinnedToCore(
+        Task_FSM,
+        "Task_FSM",
+        8192,
+        NULL,
+        2,
+        NULL,
+        1
+    );
+    Serial.println("Task_FSM created");
+
+    xTaskCreatePinnedToCore(
+        Task_Comm,
+        "Task_Comm",
+        8192,
+        NULL,
+        1,
+        NULL,
+        1
+    );
+    Serial.println("Task_Comm created");
 }
 void loop() {
     // Empty. Tasks are running in FreeRTOS.

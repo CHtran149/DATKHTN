@@ -57,6 +57,23 @@ void Task_Processing(void *pvParameters) {
             int RainIndex = (int)constrain(R_avg * 10.0f, 0, 100);
             int WindIndex = (int)constrain(W_avg * 10.0f, 0, 100);
 
+            // Build processed message to send to FSM
+            ProcessedSensor_t ps;
+            ps.t_avg = T_avg;
+            ps.h_avg = H_avg;
+            ps.p_avg = P_avg;
+            ps.w_avg = W_avg;
+            ps.r_avg = R_avg;
+            ps.heat_index_c = heat_c;
+            ps.rain_index = RainIndex;
+            ps.wind_index = WindIndex;
+            ps.timestamp = raw.timestamp;
+
+            // Send processed data to FSM input queue (non-blocking)
+            if (Queue_FSM_Input != NULL) {
+                xQueueSend(Queue_FSM_Input, &ps, 0);
+            }
+
             // Output processed values
             Serial.println("---- Processed Sensor Data ----");
             Serial.print("T_avg: "); Serial.print(T_avg); Serial.print(" C | ");
