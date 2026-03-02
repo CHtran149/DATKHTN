@@ -12,6 +12,8 @@
 #include "TaskFSM.h"
 #include "TaskComm.h"
 #include "Modem.h"
+#include "TaskBlynk.h"
+#include "TaskCloud.h"
 
 /* ===== PIN DEFINE ===== */
 #define PIN_DHT        10
@@ -41,6 +43,14 @@ QueueHandle_t Queue_SensorRaw;
 QueueHandle_t Queue_FSM_Input;
 QueueHandle_t Queue_Alert;
 EventGroupHandle_t Event_Weather;
+// additional
+QueueHandle_t Queue_Data_Blynk;
+QueueHandle_t Queue_Data_Cloud;
+QueueHandle_t Queue_Config;
+SemaphoreHandle_t Config_Mutex;
+
+// define global config
+Config_t g_config;
 
 void Task_Sensor(void *pvParameters) {
     SensorRaw_t data;
@@ -152,7 +162,20 @@ void setup() {
     Queue_SensorRaw = xQueueCreate(5, sizeof(SensorRaw_t));
     Queue_FSM_Input = xQueueCreate(5, sizeof(ProcessedSensor_t));
     Queue_Alert = xQueueCreate(5, sizeof(Alert_t));
+    Queue_Data_Blynk = xQueueCreate(5, sizeof(ProcessedSensor_t));
+    Queue_Data_Cloud = xQueueCreate(5, sizeof(ProcessedSensor_t));
+    Queue_Config = xQueueCreate(2, sizeof(Config_t));
+    Config_Mutex = xSemaphoreCreateMutex();
     Event_Weather = xEventGroupCreate();
+
+    // initialize default config
+    g_config.sample_interval_ms = 3000;
+    g_config.temp_warn = 35.0f;
+    g_config.temp_danger = 40.0f;
+    g_config.humi_warn = 80.0f;
+    g_config.humi_danger = 90.0f;
+    g_config.wind_danger = 20.0f;
+    g_config.rain_danger = 10.0f;
 
     xTaskCreatePinnedToCore(
         Task_Sensor,
@@ -197,6 +220,28 @@ void setup() {
         1
     );
     Serial.println("Task_Comm created");
+
+    xTaskCreatePinnedToCore(
+        Task_Blynk,
+        "Task_Blynk",
+        8192,
+        NULL,
+        1,
+        NULL,
+        1
+    );
+    Serial.println("Task_Blynk created");
+
+    xTaskCreatePinnedToCore(
+        Task_Cloud,
+        "Task_Cloud",
+        8192,
+        NULL,
+        1,
+        NULL,
+        1
+    );
+    Serial.println("Task_Cloud created");
 }
 void loop() {
     // Empty. Tasks are running in FreeRTOS.

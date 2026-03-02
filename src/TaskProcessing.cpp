@@ -32,9 +32,22 @@ static float heatIndexC(float T_c, float RH) {
 
 void Task_Processing(void *pvParameters) {
     SensorRaw_t raw;
+    Config_t cfgMsg;
 
     while (1) {
         if (xQueueReceive(Queue_SensorRaw, &raw, portMAX_DELAY) == pdTRUE) {
+            // check for configuration updates from Blynk (non-blocking)
+            if (Queue_Config != NULL) {
+                if (xQueueReceive(Queue_Config, &cfgMsg, 0) == pdTRUE) {
+                    if (Config_Mutex != NULL) {
+                        if (xSemaphoreTake(Config_Mutex, pdMS_TO_TICKS(1000)) == pdTRUE) {
+                            g_config = cfgMsg;
+                            xSemaphoreGive(Config_Mutex);
+                            Serial.println("[Processing] Updated g_config from Queue_Config");
+                        }
+                    }
+                }
+            }
             // push into buffers
             buf_temp[buf_idx] = raw.temperature;
             buf_humi[buf_idx] = raw.humidity;
@@ -74,6 +87,13 @@ void Task_Processing(void *pvParameters) {
                 xQueueSend(Queue_FSM_Input, &ps, 0);
             }
 
+            // Also send processed data to both Blynk and Cloud queues
+            if (Queue_Data_Blynk != NULL) {
+                xQueueSend(Queue_Data_Blynk, &ps, 0);
+            }
+            if (Queue_Data_Cloud != NULL) {
+                xQueueSend(Queue_Data_Cloud, &ps, 0);
+            }
             // Output processed values
             Serial.println("---- Processed Sensor Data ----");
             Serial.print("T_avg: "); Serial.print(T_avg); Serial.print(" C | ");

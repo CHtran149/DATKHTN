@@ -51,3 +51,22 @@ typedef struct {
 extern QueueHandle_t Queue_FSM_Input; // carries ProcessedSensor_t
 extern QueueHandle_t Queue_Alert;     // carries Alert_t
 extern EventGroupHandle_t Event_Weather;
+
+// Additional queues and synchronization
+extern QueueHandle_t Queue_Data_Blynk; // processed data for Blynk
+extern QueueHandle_t Queue_Data_Cloud; // processed data for Cloud
+extern QueueHandle_t Queue_Config;     // carries Config_t from Blynk to Processing
+extern SemaphoreHandle_t Config_Mutex; // protects g_config
+
+// Global configuration structure
+typedef struct {
+    uint32_t sample_interval_ms;
+    float temp_warn;
+    float temp_danger;
+    float humi_warn;
+    float humi_danger;
+    float wind_danger;
+    float rain_danger;
+} Config_t;
+
+extern Config_t g_config;

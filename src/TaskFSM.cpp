@@ -6,13 +6,7 @@
 #define EVENT_DANGER_BIT  (1 << 1)
 #define EVENT_ERROR_BIT   (1 << 2)
 
-// Thresholds (example values — tune as needed)
-static const float TEMP_WARN = 35.0f; // °C
-static const float TEMP_DANGER = 40.0f;
-static const float HUMI_WARN = 80.0f; // %
-static const float HUMI_DANGER = 90.0f;
-static const float WIND_DANGER = 20.0f; // m/s
-static const float RAIN_DANGER = 10.0f; // mm per sample
+// Thresholds will be read from shared g_config (protected by Config_Mutex)
 
 void Task_FSM(void *pvParameters) {
     ProcessedSensor_t ps;
@@ -23,9 +17,22 @@ void Task_FSM(void *pvParameters) {
             AlertLevel_t level = ALERT_INFO;
 
             // Simple FSM checks: escalate to highest triggered level
-            if (ps.t_avg >= TEMP_DANGER || ps.h_avg >= HUMI_DANGER || ps.w_avg >= WIND_DANGER || ps.r_avg >= RAIN_DANGER) {
+            float temp_warn = 35.0f, temp_danger = 40.0f, humi_warn = 80.0f, humi_danger = 90.0f, wind_danger = 20.0f, rain_danger = 10.0f;
+            if (Config_Mutex != NULL) {
+                if (xSemaphoreTake(Config_Mutex, pdMS_TO_TICKS(500)) == pdTRUE) {
+                    temp_warn = g_config.temp_warn;
+                    temp_danger = g_config.temp_danger;
+                    humi_warn = g_config.humi_warn;
+                    humi_danger = g_config.humi_danger;
+                    wind_danger = g_config.wind_danger;
+                    rain_danger = g_config.rain_danger;
+                    xSemaphoreGive(Config_Mutex);
+                }
+            }
+
+            if (ps.t_avg >= temp_danger || ps.h_avg >= humi_danger || ps.w_avg >= wind_danger || ps.r_avg >= rain_danger) {
                 level = ALERT_DANGER;
-            } else if (ps.t_avg >= TEMP_WARN || ps.h_avg >= HUMI_WARN) {
+            } else if (ps.t_avg >= temp_warn || ps.h_avg >= humi_warn) {
                 level = ALERT_WARNING;
             }
 
