@@ -147,7 +147,7 @@ void Task_Sensor(void *pvParameters) {
     }
 }
 void setup() {
-    Serial.begin(9600);
+    Serial.begin(115200);
     delay(1000);
 
     Wire.begin(SDA_PIN, SCL_PIN);
@@ -193,7 +193,7 @@ void setup() {
         "Task_Processing",
         8192,
         NULL,
-        1,
+        2,
         NULL,
         1
     );
@@ -217,7 +217,7 @@ void setup() {
         NULL,
         1,
         NULL,
-        1
+        0
     );
     Serial.println("Task_Comm created");
 
@@ -228,7 +228,7 @@ void setup() {
         NULL,
         1,
         NULL,
-        1
+        0
     );
     Serial.println("Task_Blynk created");
 
@@ -239,10 +239,9 @@ void setup() {
         NULL,
         1,
         NULL,
-        1
+        0
     );
-    Serial.println("Task_Cloud created");
+    Serial.println("All tasks started");
 }
 void loop() {
-    // Empty. Tasks are running in FreeRTOS.
 }
