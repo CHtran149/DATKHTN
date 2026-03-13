@@ -7,7 +7,7 @@
 // WiFi and server configuration - replace with real values
 const char* CLOUD_SSID = "YOUR_WIFI_SSID";
 const char* CLOUD_PASS = "YOUR_WIFI_PASS";
-const char* SERVER_URL = "https://your-cloud-endpoint/api/data";
+const char* SERVER_URL = "https://script.google.com/macros/s/AKfycbz9v6RiECnLMrJV_VXq0IcMJbGvXppx0i_nK9uNAEdTrpLI_aBqAzpiJOUctR7-lbyC/exec";
 
 void Task_Cloud(void *pvParameters) {
     ProcessedSensor_t data;
