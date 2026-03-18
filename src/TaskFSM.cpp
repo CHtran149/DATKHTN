@@ -46,7 +46,7 @@ void Task_FSM(void *pvParameters) {
                 alert.level = level;
                 alert.timestamp = ps.timestamp;
                 if (level == ALERT_WARNING) {
-                    snprintf(alert.message, sizeof(alert.message), "WARNING: T=%.1f H=%.1f", ps.t_avg, ps.h_avg);
+                   // snprintf(alert.message, sizeof(alert.message), "WARNING: T=%.1f H=%.1f", ps.t_avg, ps.h_avg);
                 } else if (level == ALERT_DANGER) {
                     snprintf(alert.message, sizeof(alert.message), "DANGER: T=%.1f H=%.1f W=%.1f R=%.2f", ps.t_avg, ps.h_avg, ps.w_avg, ps.r_avg);
                 } else {

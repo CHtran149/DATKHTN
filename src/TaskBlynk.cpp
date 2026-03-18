@@ -52,11 +52,11 @@ void Task_Blynk(void *pvParameters) {
                 Blynk.virtualWrite(VPIN_W_AVG, data.w_avg);
                 Blynk.virtualWrite(VPIN_R_AVG, data.r_avg);
 
-                Serial.printf("[Blynk] Sent T=%.2f H=%.2f P=%.2f W=%.2f R=%.2f\n",
-                              data.t_avg, data.h_avg, data.p_avg, data.w_avg, data.r_avg);
+              //  Serial.printf("[Blynk] Sent T=%.2f H=%.2f P=%.2f W=%.2f R=%.2f\n",
+                           //   data.t_avg, data.h_avg, data.p_avg, data.w_avg, data.r_avg);
             }
         }
 
-        vTaskDelay(pdMS_TO_TICKS(500)); // delay vừa phải
+        vTaskDelay(pdMS_TO_TICKS(10)); // delay vừa phải
     }
 }

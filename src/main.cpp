@@ -55,7 +55,7 @@ Config_t g_config;
 void Task_Sensor(void *pvParameters) {
     SensorRaw_t data;
 
-    //Serial.println("[Task_Sensor] Started");
+    Serial.println("[Task_Sensor] Started");
 
     while (1) {
         //Serial.println("---- New Sensor Cycle ----");
@@ -106,7 +106,7 @@ void Task_Sensor(void *pvParameters) {
         /* ---- Rain ---- */
         //Serial.println("Reading Rain...");
         auto rainData = rain.read();
-        //Serial.println("Rain read ");
+        Serial.println("Rain read ");
 
         if (rainData.valid) {
             data.rainfall = rainData.luongMua;
@@ -115,9 +115,9 @@ void Task_Sensor(void *pvParameters) {
         }
 
         /* ---- GPS ---- */
-        //Serial.println("Reading GPS...");
+        Serial.println("Reading GPS...");
         auto gpsData = gps.read();
-        //Serial.println("GPS read ");
+        Serial.println("GPS read ");
 
         if (gpsData.valid) {
             Serial.print("Lat: ");
@@ -148,8 +148,9 @@ void Task_Sensor(void *pvParameters) {
 }
 void setup() {
     Serial.begin(115200);
-    delay(1000);
-
+    Serial.println("boot ok");
+    delay(2000);
+    Serial.println("\n--- He thong bat dau khoi dong ---");
     Wire.begin(SDA_PIN, SCL_PIN);
 
     bmp.begin();
@@ -157,7 +158,7 @@ void setup() {
     rain.begin();
     gps.begin(115200);
     // Khởi động modem SIMCOM trên cổng Serial2 với chân RX/TX đã cấu hình
-    modem.begin(GSM_RX, GSM_TX);
+  //   modem.begin(GSM_RX, GSM_TX);
 
     Queue_SensorRaw = xQueueCreate(5, sizeof(SensorRaw_t));
     Queue_FSM_Input = xQueueCreate(5, sizeof(ProcessedSensor_t));
@@ -177,71 +178,25 @@ void setup() {
     g_config.wind_danger = 20.0f;
     g_config.rain_danger = 10.0f;
 
-    xTaskCreatePinnedToCore(
-        Task_Sensor,
-        "Task_Sensor",
-        8192,
-        NULL,
-        2,
-        NULL,
-        1
-    );
-
+    xTaskCreatePinnedToCore(Task_Sensor,"Task_Sensor",8192,NULL,2,NULL,1);
     Serial.println("Task_Sensor created");
-    xTaskCreatePinnedToCore(
-        Task_Processing,
-        "Task_Processing",
-        8192,
-        NULL,
-        2,
-        NULL,
-        1
-    );
 
+    xTaskCreatePinnedToCore(Task_Processing,"Task_Processing",8192,NULL,2,NULL,1);
     Serial.println("Task_Processing created");
-    xTaskCreatePinnedToCore(
-        Task_FSM,
-        "Task_FSM",
-        8192,
-        NULL,
-        2,
-        NULL,
-        1
-    );
+
+    xTaskCreatePinnedToCore(Task_FSM,"Task_FSM",8192,NULL,2,NULL,1);
     Serial.println("Task_FSM created");
 
-    xTaskCreatePinnedToCore(
-        Task_Comm,
-        "Task_Comm",
-        8192,
-        NULL,
-        1,
-        NULL,
-        0
-    );
-    Serial.println("Task_Comm created");
+    //xTaskCreatePinnedToCore(Task_Comm,"Task_Comm",8192,NULL,1,NULL,0);
+    //Serial.println("Task_Comm created");
 
-    xTaskCreatePinnedToCore(
-        Task_Blynk,
-        "Task_Blynk",
-        8192,
-        NULL,
-        1,
-        NULL,
-        0
-    );
-    Serial.println("Task_Blynk created");
+    //xTaskCreatePinnedToCore(Task_Blynk,"Task_Blynk",8192,NULL,1,NULL,0);
+    //Serial.println("Task_Blynk created");
 
-    xTaskCreatePinnedToCore(
-        Task_Cloud,
-        "Task_Cloud",
-        8192,
-        NULL,
-        1,
-        NULL,
-        0
-    );
-    Serial.println("All tasks started");
+   // xTaskCreatePinnedToCore(Task_Cloud,"Task_Cloud",8192,NULL,1,NULL,0);
+    //Serial.println("Task_Cloud created");
+    
+    //Serial.println("All tasks started");
 }
 void loop() {
 }

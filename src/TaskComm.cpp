@@ -66,14 +66,14 @@ void Task_Comm(void *pvParameters) {
                         else if (bits & (1 << 2)) state = "ERROR";
 
                         char reply[160];
-                        snprintf(reply, sizeof(reply),
+                       snprintf(reply, sizeof(reply),
                             "T=%.1fC H=%.1f%% P=%.1fhPa W=%.1fm/s R=%.1fmm State=%s",
                             latest.t_avg, latest.h_avg, latest.p_avg,
                             latest.w_avg, latest.r_avg, state);
 
                         bool success = modem.sendSMS(sender.c_str(), reply);
                         if (success) {
-                            Serial.println("[Comm] Replied with weather data");
+                           Serial.println("[Comm] Replied with weather data");
                         } else {
                             Serial.println("[Comm] Failed to reply SMS");
                         }
