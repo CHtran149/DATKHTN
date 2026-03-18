@@ -70,6 +70,12 @@ void Task_Processing(void *pvParameters) {
             int RainIndex = (int)constrain(R_avg * 10.0f, 0, 100);
             int WindIndex = (int)constrain(W_avg * 10.0f, 0, 100);
 
+             // ===== DOI GPS SANG DANG THAP PHAN =====
+            float lat = raw.lat_deg + raw.lat_min / 60.0f + raw.lat_sec / 3600.0f;
+            float lon = raw.lon_deg + raw.lon_min / 60.0f + raw.lon_sec / 3600.0f;
+            if (raw.lat_dir == 'S') lat = -lat;
+            if (raw.lon_dir == 'W') lon = -lon;
+
             // Build processed message to send to FSM
             ProcessedSensor_t ps;
             ps.t_avg = T_avg;
@@ -80,6 +86,8 @@ void Task_Processing(void *pvParameters) {
             ps.heat_index_c = heat_c;
             ps.rain_index = RainIndex;
             ps.wind_index = WindIndex;
+            ps.latitude = lat;
+            ps.longitude = lon;
             ps.timestamp = raw.timestamp;
 
             // Send processed data to FSM input queue (non-blocking)
@@ -108,6 +116,9 @@ void Task_Processing(void *pvParameters) {
             Serial.print("HeatIndex (C): "); Serial.print(heat_c); Serial.print(" | ");
             Serial.print("RainIndex: "); Serial.print(RainIndex); Serial.print(" | ");
             Serial.print("WindIndex: "); Serial.println(WindIndex);
+
+            Serial.print("Vi do: "); Serial.print(lat, 6);
+            Serial.print(" | Kinh do: "); Serial.println(lon, 6);
             Serial.println("-------------------------------\n");
         }
     }

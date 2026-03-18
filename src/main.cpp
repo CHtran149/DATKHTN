@@ -120,6 +120,16 @@ void Task_Sensor(void *pvParameters) {
         Serial.println("GPS read ");
 
         if (gpsData.valid) {
+            data.lat_deg = gpsData.lat_deg;
+            data.lat_min = gpsData.lat_min;
+            data.lat_sec = gpsData.lat_sec;
+            data.lat_dir = gpsData.lat_dir;
+
+            data.lon_deg = gpsData.lon_deg;
+            data.lon_min = gpsData.lon_min;
+            data.lon_sec = gpsData.lon_sec;
+            data.lon_dir = gpsData.lon_dir;
+
             Serial.print("Lat: ");
             Serial.print(gpsData.lat_deg);
             Serial.print("°");
@@ -190,8 +200,8 @@ void setup() {
     //xTaskCreatePinnedToCore(Task_Comm,"Task_Comm",8192,NULL,1,NULL,0);
     //Serial.println("Task_Comm created");
 
-    //xTaskCreatePinnedToCore(Task_Blynk,"Task_Blynk",8192,NULL,1,NULL,0);
-    //Serial.println("Task_Blynk created");
+    xTaskCreatePinnedToCore(Task_Blynk,"Task_Blynk",8192,NULL,1,NULL,0);
+    Serial.println("Task_Blynk created");
 
    // xTaskCreatePinnedToCore(Task_Cloud,"Task_Cloud",8192,NULL,1,NULL,0);
     //Serial.println("Task_Cloud created");

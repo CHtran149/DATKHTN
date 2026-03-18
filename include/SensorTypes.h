@@ -35,6 +35,8 @@ typedef struct {
     float heat_index_c;
     int rain_index;
     int wind_index;
+    float latitude;
+    float longitude;
     uint32_t timestamp;
 } ProcessedSensor_t;
 
