@@ -10,5 +10,12 @@
 #include "GSM.h"
 #include "Rainfall.h"
 #include "WindSpeed.h"
+#include "SensorTypes.h"
+#include "TaskProcessing.h"
+#include "TaskSensor.h"
+#include "TaskFSM.h"
+#include "TaskComm.h"
+#include "TaskBlynk.h"
+#include "TaskCloud.h"
 
 #endif // __ALL_HEADER_H__

@@ -2,19 +2,7 @@
 #include <Wire.h>
 
 /* ===== Include module ===== */
-#include "DHT11.h"
-#include "BMP180.h"
-#include "WindSpeed.h"
-#include "Rainfall.h"
-#include "GPS.h"
-#include "SensorTypes.h"
-#include "TaskProcessing.h"
-#include "TaskFSM.h"
-#include "TaskComm.h"
-#include "Modem.h"
-#include "TaskBlynk.h"
-#include "TaskCloud.h"
-
+#include "all_header.h"
 /* ===== PIN DEFINE ===== */
 #define PIN_DHT        10
 #define PIN_WIND       5
@@ -52,110 +40,6 @@ SemaphoreHandle_t Config_Mutex;
 // define global config
 Config_t g_config;
 
-void Task_Sensor(void *pvParameters) {
-    SensorRaw_t data;
-
-    Serial.println("[Task_Sensor] Started");
-
-    while (1) {
-        //Serial.println("---- New Sensor Cycle ----");
-
-        /* ---- DHT11 ---- */
-        //Serial.println("Reading DHT11...");
-        auto dhtData = dht.read();
-        //Serial.println("DHT11 read ");
-
-        if (dhtData.valid) {
-            data.temperature = dhtData.temperature;
-            data.humidity    = dhtData.humidity;
-
-            Serial.print("Temp: ");
-            Serial.print(data.temperature);
-            Serial.print(" | Humi: ");
-            Serial.println(data.humidity);
-        } else {
-            Serial.println("DHT11 invalid");
-        }
-
-        /* ---- BMP180 ---- */
-        //Serial.println("Reading BMP180...");
-        auto bmpData = bmp.read();
-        //Serial.println("BMP180 read ");
-
-        if (bmpData.valid) {
-            data.pressure = bmpData.pressure;
-            data.altitude = bmpData.altitude;
-
-            Serial.print("Pressure: ");
-            Serial.print(data.pressure);
-            Serial.print(" | Altitude: ");
-            Serial.println(data.altitude);
-        }
-
-        /* ---- Wind ---- */
-        //Serial.println("Reading Wind...");
-        auto windData = wind.read(1000);
-        //Serial.println("Wind read ");
-
-        if (windData.valid) {
-            data.wind_speed = windData.toc_do_gio;
-            Serial.print("Wind: ");
-            Serial.println(data.wind_speed);
-        }
-
-        /* ---- Rain ---- */
-        //Serial.println("Reading Rain...");
-        auto rainData = rain.read();
-        Serial.println("Rain read ");
-
-        if (rainData.valid) {
-            data.rainfall = rainData.luongMua;
-            Serial.print("Rainfall: ");
-            Serial.println(data.rainfall);
-        }
-
-        /* ---- GPS ---- */
-        Serial.println("Reading GPS...");
-        auto gpsData = gps.read();
-        Serial.println("GPS read ");
-
-        if (gpsData.valid) {
-            data.lat_deg = gpsData.lat_deg;
-            data.lat_min = gpsData.lat_min;
-            data.lat_sec = gpsData.lat_sec;
-            data.lat_dir = gpsData.lat_dir;
-
-            data.lon_deg = gpsData.lon_deg;
-            data.lon_min = gpsData.lon_min;
-            data.lon_sec = gpsData.lon_sec;
-            data.lon_dir = gpsData.lon_dir;
-
-            Serial.print("Lat: ");
-            Serial.print(gpsData.lat_deg);
-            Serial.print("°");
-            Serial.print(gpsData.lat_min);
-            Serial.print("'");
-            Serial.print(gpsData.lat_sec);
-            Serial.print(gpsData.lat_dir);
-
-            Serial.print(" | Lon: ");
-            Serial.print(gpsData.lon_deg);
-            Serial.print("°");
-            Serial.print(gpsData.lon_min);
-            Serial.print("'");
-            Serial.print(gpsData.lon_sec);
-            Serial.println(gpsData.lon_dir);
-        }
-
-        data.timestamp = millis();
-
-        xQueueSend(Queue_SensorRaw, &data, 0);
-
-        //Serial.println("Cycle done\n");
-
-        vTaskDelay(pdMS_TO_TICKS(3000));
-    }
-}
 void setup() {
     Serial.begin(115200);
     Serial.println("boot ok");

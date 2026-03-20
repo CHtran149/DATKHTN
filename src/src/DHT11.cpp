@@ -1,27 +1,28 @@
 #include "DHT11.h"
 
 // --- Khởi tạo ---
-DHT11::DHT11(int pin) {
-    _pin = pin;
-    pinMode(_pin, INPUT_PULLUP);
-    result = {0, 0, false};
+DHT11::DHT11(int pin) { // khởi tạo đối tượng DHT11 với chân dữ liệu được chỉ định, thiết lập chân này là INPUT_PULLUP và khởi tạo kết quả mặc định
+    _pin = pin; // Chân dữ liệu của DHT11
+    pinMode(_pin, INPUT_PULLUP); //  DHT11 yêu cầu chân dữ liệu phải có điện trở kéo lên (pull-up), nên ta dùng INPUT_PULLUP để kích hoạt điện trở nội của ESP32
+    result = {0, 0, false}; // khởi tạo giá trị mặc định cho struct Data (nhiệt độ, độ ẩm, valid)                   
 }
 
 // --- Đọc dữ liệu thô từ cảm biến ---
-bool DHT11::_readRawData(uint8_t data[5]) {
-    uint8_t cnt = 7, idx = 0;
+bool DHT11::_readRawData(uint8_t data[5]) { // hàm đọc trực tiếp 5 byte dữ liệu tho từ DHT11
+    uint8_t cnt = 7, idx = 0; // biến cnt dùng để ghi bit vào từng byte, bắt đầu từ bit 7 (MSB)
+                                // idx dùng để chỉ byte hiện tại trong mảng data (0-4)
     for (int i = 0; i < 5; i++) data[i] = 0;
 
     // Gửi tín hiệu bắt đầu tới cảm biến
-    pinMode(_pin, OUTPUT);
-    digitalWrite(_pin, LOW);
+    pinMode(_pin, OUTPUT); // chuyển chân dữ liệu sang OUTPUT để gửi tín hiệu bắt đầu
+    digitalWrite(_pin, LOW);// kéo chân dữ liệu xuống LOW để bắt đầu giao tiếp
     delay(20); // giữ mức thấp ít nhất 18ms
-    digitalWrite(_pin, HIGH);
-    delayMicroseconds(30);
-    pinMode(_pin, INPUT);
+    digitalWrite(_pin, HIGH);// sau đó kéo lên HIGH để kết thúc tín hiệu bắt đầu
+    delayMicroseconds(30);//đợi khoảng 20-40us để DHT11 chuẩn bị phản hồi
+    pinMode(_pin, INPUT); // Chuyển chân dữ liệu về INPUT để chờ DHT11 phản hồi, lúc này chân sẽ được kéo lên bởi điện trở pull-up
 
     // Chờ cảm biến phản hồi
-    unsigned long start = micros();
+    unsigned long start = micros(); // bắt đầu đếm thời gian chờ phản hồi từ DHT11
     while (digitalRead(_pin) == HIGH) {
         if (micros() - start > 90) return false; // không phản hồi
     }
