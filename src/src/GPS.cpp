@@ -3,6 +3,7 @@
 #include <stdio.h>
 
 GPS::GPS(HardwareSerial &uart) : _uart(uart) {
+    memset(&data, 0, sizeof(data));
     data.valid = false;
 }
 

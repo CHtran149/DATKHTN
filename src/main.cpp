@@ -5,8 +5,8 @@
 #include "all_header.h"
 /* ===== PIN DEFINE ===== */
 #define PIN_DHT        10
-#define PIN_WIND       5
-#define PIN_RAIN       7
+#define PIN_WIND       7
+#define PIN_RAIN       5
 
 #define SDA_PIN        13
 #define SCL_PIN        12

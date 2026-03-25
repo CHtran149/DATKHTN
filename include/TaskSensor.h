@@ -1,9 +1,8 @@
-#ifndef TASK_SENSOR_H
-#define TASK_SENSOR_H
 
-#include <Arduino.h>
+#pragma once
+
 #include "SensorTypes.h"
 
+/* ===== Task ===== */
 void Task_Sensor(void *pvParameters);
 
-#endif
