@@ -44,6 +44,8 @@ void Task_Comm(void *pvParameters)
     Serial.println("[Comm] Task started");
 
     unsigned long lastAlert = 0;
+    unsigned long lastPeriodicSend = 0;
+
 
     Alert_t alert;
     ProcessedSensor_t latest = {0};
@@ -154,6 +156,32 @@ void Task_Comm(void *pvParameters)
             {
                 Serial.println("[Comm] SMS ignored");
             }
+        }
+
+        // =====================================================
+        // 4. GỬI DỮ LIỆU ĐỊNH KỲ 5 PHÚT
+        // =====================================================
+        if (hasData && (now - lastPeriodicSend >= 300000)) { // 300000 ms = 5 phút
+            snprintf(msgbuf, sizeof(msgbuf),
+                    "T=%.1fC H=%.1f%% P=%.1fhPa W=%.1fm/s R=%.1fmm Lat=%.5f Lon=%.5f",
+                    latest.t_avg,
+                    latest.h_avg,
+                    latest.p_avg,
+                    latest.w_avg,
+                    latest.r_avg,
+                    latest.latitude,
+                    latest.longitude);
+
+            Serial.println("[Comm] Sending periodic data SMS...");
+
+            for (int i = 0; i < alertPhoneCount; i++) {
+                bool ok = sendWithRetries(alertPhones[i], msgbuf, MAX_RETRY);
+                if (ok) Serial.println("[Comm] Periodic SMS OK");
+                else Serial.println("[Comm] Periodic SMS FAIL");
+                vTaskDelay(pdMS_TO_TICKS(500));
+            }
+
+            lastPeriodicSend = now;
         }
 
         Serial.println("[Comm] Loop done\n");
