@@ -111,7 +111,7 @@ void Task_Processing(void *pvParameters) {
                 xQueueSend(Queue_Data_Cloud, &ps,0);
             }
             if (Queue_Data_Comm != NULL) {
-               xQueueSend(Queue_Data_Comm, &ps, portMAX_DELAY);
+               xQueueSend(Queue_Data_Comm, &ps, 0);
             }
 
             // Output processed values

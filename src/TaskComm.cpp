@@ -48,7 +48,7 @@ void Task_Comm(void *pvParameters)
     Alert_t alert;
     ProcessedSensor_t latest = {0};
 
-    bool hasData = false;   // ⭐ KHÔNG reset mỗi vòng
+    bool hasData = false;  
 
     char msgbuf[180];
 
@@ -121,7 +121,7 @@ void Task_Comm(void *pvParameters)
 
             Serial.printf("[Comm] After trim: '%s'\n", content.c_str());
 
-            if (content == "REQUEST" || content == "REQ")
+            if (content.equalsIgnoreCase("REQUEST") || content.equalsIgnoreCase("REQ"))
             {
                 Serial.println("[Comm] REQUEST detected");
 

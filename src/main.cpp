@@ -51,15 +51,12 @@ void setup() {
     wind.begin();
     rain.begin();
     gps.begin(115200);
-    // Khởi động modem SIMCOM trên cổng Serial2 với chân RX/TX đã cấu hình
-    Serial2.begin(115200, SERIAL_8N1, GSM_RX, GSM_TX);
-    delay(3000);
     modem.begin(GSM_RX, GSM_TX);
-    Serial2.println("AT+CMGF=1");
-    delay(500);
+    // Serial2.println("AT+CMGF=1");
+    // delay(500);
 
-    Serial2.println("AT+CNMI=2,2,0,0,0");
-    delay(500);
+    // Serial2.println("AT+CNMI=2,2,0,0,0");
+    // delay(500);
 
     Queue_SensorRaw = xQueueCreate(5, sizeof(SensorRaw_t));
     Queue_FSM_Input = xQueueCreate(5, sizeof(ProcessedSensor_t));
