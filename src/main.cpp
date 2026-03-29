@@ -81,8 +81,8 @@ void setup() {
     xTaskCreatePinnedToCore(Task_FSM,"Task_FSM",8192,NULL,2,NULL,1);
     Serial.println("Task_FSM created");
 
-    //xTaskCreatePinnedToCore(Task_Comm,"Task_Comm",8192,NULL,1,NULL,0);
-    //Serial.println("Task_Comm created");
+    xTaskCreatePinnedToCore(Task_Comm,"Task_Comm",8192,NULL,1,NULL,0);
+    Serial.println("Task_Comm created");
 
     xTaskCreatePinnedToCore(Task_Blynk,"Task_Blynk",8192,NULL,1,NULL,0);
     Serial.println("Task_Blynk created");
