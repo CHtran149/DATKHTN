@@ -105,11 +105,15 @@ void Task_Processing(void *pvParameters) {
 
             // Also send processed data to both Blynk and Cloud queues
             if (Queue_Data_Blynk != NULL) {
-                xQueueSend(Queue_Data_Blynk, &ps, 0);
+                xQueueSend(Queue_Data_Blynk, &ps,0);
             }
             if (Queue_Data_Cloud != NULL) {
-                xQueueSend(Queue_Data_Cloud, &ps, 0);
+                xQueueSend(Queue_Data_Cloud, &ps,0);
             }
+            if (Queue_Data_Comm != NULL) {
+               xQueueSend(Queue_Data_Comm, &ps, portMAX_DELAY);
+            }
+
             // Output processed values
             Serial.println("---- Processed Sensor Data ----");
             Serial.print("T_avg: "); Serial.print(T_avg); Serial.print(" C | ");

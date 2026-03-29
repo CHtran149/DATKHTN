@@ -9,6 +9,16 @@ void GSM::begin(int rxPin, int txPin)
 {
     modem.begin(baud, SERIAL_8N1, rxPin, txPin);
     delay(12000); // chờ modem ổn định
+
+    // Basic initialization: disable echo, set SMS text mode,
+    // and enable new-message indications so incoming SMS are
+    // forwarded as +CMT: lines to the serial port.
+    modem.println("ATE0"); // disable echo
+    delay(200);
+    modem.println("AT+CMGF=1"); // SMS text mode
+    delay(200);
+    modem.println("AT+CNMI=2,2,0,0,0"); // deliver incoming SMS as +CMT
+    delay(200);
 }
 
 // --- Chờ ký tự phản hồi từ modem ---
@@ -36,8 +46,10 @@ static bool waitForResponse(HardwareSerial &modemRef, const char *needle, uint32
         while (modemRef.available()) {
             char c = modemRef.read();
             buf += c;
+            // echo modem traffic to primary Serial for debugging
+            Serial.write(c);
             // keep buffer bounded
-            if (buf.length() > 512) buf = buf.substring(buf.length() - 512);
+            if (buf.length() > 1024) buf = buf.substring(buf.length() - 1024);
         }
         if (buf.indexOf(needle) >= 0) return true;
         delay(10);

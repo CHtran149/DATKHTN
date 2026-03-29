@@ -36,7 +36,7 @@ QueueHandle_t Queue_Data_Blynk;
 QueueHandle_t Queue_Data_Cloud;
 QueueHandle_t Queue_Config;
 SemaphoreHandle_t Config_Mutex;
-
+QueueHandle_t Queue_Data_Comm;
 // define global config
 Config_t g_config;
 
@@ -52,11 +52,19 @@ void setup() {
     rain.begin();
     gps.begin(115200);
     // Khởi động modem SIMCOM trên cổng Serial2 với chân RX/TX đã cấu hình
-  //   modem.begin(GSM_RX, GSM_TX);
+    Serial2.begin(115200, SERIAL_8N1, GSM_RX, GSM_TX);
+    delay(3000);
+    modem.begin(GSM_RX, GSM_TX);
+    Serial2.println("AT+CMGF=1");
+    delay(500);
+
+    Serial2.println("AT+CNMI=2,2,0,0,0");
+    delay(500);
 
     Queue_SensorRaw = xQueueCreate(5, sizeof(SensorRaw_t));
     Queue_FSM_Input = xQueueCreate(5, sizeof(ProcessedSensor_t));
     Queue_Alert = xQueueCreate(5, sizeof(Alert_t));
+    Queue_Data_Comm = xQueueCreate(10, sizeof(ProcessedSensor_t));
     Queue_Data_Blynk = xQueueCreate(5, sizeof(ProcessedSensor_t));
     Queue_Data_Cloud = xQueueCreate(5, sizeof(ProcessedSensor_t));
     Queue_Config = xQueueCreate(2, sizeof(Config_t));
@@ -81,7 +89,7 @@ void setup() {
     xTaskCreatePinnedToCore(Task_FSM,"Task_FSM",8192,NULL,2,NULL,1);
     Serial.println("Task_FSM created");
 
-    xTaskCreatePinnedToCore(Task_Comm,"Task_Comm",8192,NULL,1,NULL,0);
+    xTaskCreatePinnedToCore(Task_Comm,"Task_Comm",8192,NULL,1,NULL,1);
     Serial.println("Task_Comm created");
 
     xTaskCreatePinnedToCore(Task_Blynk,"Task_Blynk",8192,NULL,1,NULL,0);
@@ -90,7 +98,7 @@ void setup() {
    // xTaskCreatePinnedToCore(Task_Cloud,"Task_Cloud",8192,NULL,1,NULL,0);
     //Serial.println("Task_Cloud created");
     
-    //Serial.println("All tasks started");
+    Serial.println("All tasks started");
 }
 void loop() {
 }
