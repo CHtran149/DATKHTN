@@ -12,8 +12,8 @@
 // WiFi & Blynk credentials - replace with your real values
 
 
-const char* WIFI_SSID = "Phòng 603";
-const char* WIFI_PASS = "88888888";
+const char* WIFI_SSID = "UwU";
+const char* WIFI_PASS = "11111111";
 char BLYNK_AUTH[] = "quJvZhMQWTpMf1iH46-NKmk87DaGqUf6";
 
 // Virtual pin mapping (adjust in Blynk app)
