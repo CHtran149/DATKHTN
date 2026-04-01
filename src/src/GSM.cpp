@@ -8,17 +8,20 @@ GSM::GSM(HardwareSerial &serial, uint32_t baudrate)
 void GSM::begin(int rxPin, int txPin)
 {
     modem.begin(baud, SERIAL_8N1, rxPin, txPin);
-    delay(12000); // chờ modem ổn định
+    delay(15000); // chờ modem ổn định
 
     // Basic initialization: disable echo, set SMS text mode,
     // and enable new-message indications so incoming SMS are
     // forwarded as +CMT: lines to the serial port.
+    modem.println("AT");
+    delay(500);
     modem.println("ATE0"); // disable echo
     delay(200);
     modem.println("AT+CMGF=1"); // SMS text mode
     delay(200);
     modem.println("AT+CNMI=2,2,0,0,0"); // deliver incoming SMS as +CMT
     delay(200);
+    Serial.println("[GSM] Ready");
 }
 
 // --- Chờ ký tự phản hồi từ modem ---
@@ -98,33 +101,50 @@ bool GSM::sendSMS(const char *phone, const char *message)
 }
 
 
-bool GSM::readSMS(String &sender, String &content) {
-    String buf;
-    while (modem.available()) {
-        char c = modem.read();
-        buf += c;
-        // giữ buffer không quá dài
-        if (buf.length() > 512) buf = buf.substring(buf.length() - 512);
+bool GSM::readSMS(String &sender, String &content)
+{
+    if (!modem.available()) return false;
+
+    String line = modem.readStringUntil('\n');
+    line.trim();
+
+    // Debug raw
+    Serial.print("[RAW] ");
+    Serial.println(line);
+
+    // Check header SMS
+    if (line.startsWith("+CMT:"))
+    {
+        // ===== LẤY SỐ ĐIỆN THOẠI =====
+        int q1 = line.indexOf('"');
+        int q2 = line.indexOf('"', q1 + 1);
+
+        if (q1 >= 0 && q2 > q1)
+        {
+            sender = line.substring(q1 + 1, q2);
+        }
+        else
+        {
+            sender = "UNKNOWN";
+        }
+
+        // ===== ĐỌC NỘI DUNG =====
+        uint32_t t = millis();
+        while (!modem.available())
+        {
+            if (millis() - t > 2000) return false; // timeout
+        }
+
+        content = modem.readStringUntil('\n');
+        content.trim();
+
+        Serial.print("[SMS] From: ");
+        Serial.println(sender);
+        Serial.print("[SMS] Content: ");
+        Serial.println(content);
+
+        return true;
     }
 
-    // Kiểm tra chuỗi +CMT (SMS đến)
-    int idx = buf.indexOf("+CMT:");
-    if (idx >= 0) {
-        // Tìm dòng tiếp theo (nội dung SMS)
-        int start = buf.indexOf("\n", idx);
-        if (start >= 0 && start + 1 < buf.length()) {
-            content = buf.substring(start + 1);
-            content.trim();
-            // parse số điện thoại nếu cần (ở header +CMT)
-            int quote1 = buf.indexOf("\"", idx);
-            int quote2 = buf.indexOf("\"", quote1 + 1);
-            if (quote1 >= 0 && quote2 > quote1) {
-                sender = buf.substring(quote1 + 1, quote2);
-            } else {
-                sender = "UNKNOWN";
-            }
-            return true;
-        }
-    }
     return false;
 }

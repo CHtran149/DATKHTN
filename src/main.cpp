@@ -4,21 +4,21 @@
 /* ===== Include module ===== */
 #include "all_header.h"
 /* ===== PIN DEFINE ===== */
-#define PIN_DHT        10
-#define PIN_WIND       7
-#define PIN_RAIN       5
+#define PIN_DHT        18
+#define PIN_WIND       19
+#define PIN_RAIN       23
 
-#define SDA_PIN        13
-#define SCL_PIN        12
+#define SCL_PIN        22
+#define SDA_PIN        21
 
-#define GPS_RX         18
-#define GPS_TX         17
+#define GPS_RX         4
+#define GPS_TX         5
 
-#define GSM_RX         44
-#define GSM_TX         43
+#define GSM_RX         16
+#define GSM_TX         17
 
 /* ===== Object ===== */
-DHT11 dht(PIN_DHT);
+DHT11 dht(PIN_DHT); 
 BMP180 bmp;
 WindSpeed wind(PIN_WIND, 0.1f);
 Rainfall rain(PIN_RAIN, 150.0f, 12000.0f, 10000);
@@ -86,8 +86,8 @@ void setup() {
     xTaskCreatePinnedToCore(Task_FSM,"Task_FSM",8192,NULL,2,NULL,1);
     Serial.println("Task_FSM created");
 
-    xTaskCreatePinnedToCore(Task_Comm,"Task_Comm",8192,NULL,1,NULL,1);
-    Serial.println("Task_Comm created");
+    //xTaskCreatePinnedToCore(Task_Comm,"Task_Comm",8192,NULL,1,NULL,1);
+    //Serial.println("Task_Comm created");
 
     xTaskCreatePinnedToCore(Task_Blynk,"Task_Blynk",8192,NULL,1,NULL,0);
     Serial.println("Task_Blynk created");

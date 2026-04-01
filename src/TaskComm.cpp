@@ -6,7 +6,6 @@
 // ===== CONFIG =====
 static const char *alertPhones[] = {
     "+84327161236",
-    "+84977435825"
 };
 static const int alertPhoneCount = sizeof(alertPhones) / sizeof(alertPhones[0]);
 
@@ -121,8 +120,6 @@ void Task_Comm(void *pvParameters)
             // ⭐ FIX QUAN TRỌNG
             content.trim();
 
-            Serial.printf("[Comm] After trim: '%s'\n", content.c_str());
-
             if (content.equalsIgnoreCase("REQUEST") || content.equalsIgnoreCase("REQ"))
             {
                 Serial.println("[Comm] REQUEST detected");
@@ -158,9 +155,9 @@ void Task_Comm(void *pvParameters)
             }
         }
 
-        // =====================================================
-        // 4. GỬI DỮ LIỆU ĐỊNH KỲ 5 PHÚT
-        // =====================================================
+       // =====================================================
+       // 4. GỬI DỮ LIỆU ĐỊNH KỲ 5 PHÚT
+       // =====================================================
         if (hasData && (now - lastPeriodicSend >= 300000)) { // 300000 ms = 5 phút
             snprintf(msgbuf, sizeof(msgbuf),
                     "T=%.1fC H=%.1f%% P=%.1fhPa W=%.1fm/s R=%.1fmm Lat=%.5f Lon=%.5f",
@@ -186,6 +183,6 @@ void Task_Comm(void *pvParameters)
 
         Serial.println("[Comm] Loop done\n");
 
-        vTaskDelay(pdMS_TO_TICKS(3000));
-    }
+        vTaskDelay(pdMS_TO_TICKS(100));
+     }
 }
