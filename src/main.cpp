@@ -50,7 +50,7 @@ void setup() {
     bmp.begin();
     wind.begin();
     rain.begin();
-    gps.begin(115200);
+    gps.begin(115200, GPS_RX, GPS_TX);
     modem.begin(GSM_RX, GSM_TX);
     // Serial2.println("AT+CMGF=1");
     // delay(500);

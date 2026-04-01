@@ -20,7 +20,7 @@ public:
     };
 
     GPS(HardwareSerial &uart);
-    void begin(uint32_t baud);
+    void begin(uint32_t baud, int rxPin, int txPin);
     Data read();
 
 private:
