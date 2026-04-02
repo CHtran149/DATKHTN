@@ -52,12 +52,17 @@ void setup() {
     rain.begin();
     gps.begin(115200, GPS_RX, GPS_TX);
     modem.begin(GSM_RX, GSM_TX);
-    // Serial2.println("AT+CMGF=1");
-    // delay(500);
+    for(int i = 0; i < 5; i++) {
+        Serial2.println("AT"); 
+        delay(500);
+    }
+    Serial2.println("ATZ");  // Reset
+    delay(1000);
+    Serial2.println("ATE1"); // Bật Echo để Task_Comm đọc được phản hồi
+    delay(500);
 
-    // Serial2.println("AT+CNMI=2,2,0,0,0");
-    // delay(500);
 
+    
     Queue_SensorRaw = xQueueCreate(5, sizeof(SensorRaw_t));
     Queue_FSM_Input = xQueueCreate(5, sizeof(ProcessedSensor_t));
     Queue_Alert = xQueueCreate(5, sizeof(Alert_t));
@@ -86,8 +91,8 @@ void setup() {
     xTaskCreatePinnedToCore(Task_FSM,"Task_FSM",8192,NULL,2,NULL,1);
     Serial.println("Task_FSM created");
 
-    //xTaskCreatePinnedToCore(Task_Comm,"Task_Comm",8192,NULL,1,NULL,1);
-    //Serial.println("Task_Comm created");
+    xTaskCreatePinnedToCore(Task_Comm,"Task_Comm",8192,NULL,1,NULL,1);
+    Serial.println("Task_Comm created");
 
     xTaskCreatePinnedToCore(Task_Blynk,"Task_Blynk",8192,NULL,1,NULL,0);
     Serial.println("Task_Blynk created");

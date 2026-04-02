@@ -5,7 +5,7 @@
 
 // ===== CONFIG =====
 static const char *alertPhones[] = {
-    "+84327161236",
+    "+84857749204",
 };
 static const int alertPhoneCount = sizeof(alertPhones) / sizeof(alertPhones[0]);
 
@@ -31,26 +31,37 @@ static bool sendWithRetries(const char *phone, const char *msg, int maxAttempts)
             vTaskDelay(RETRY_DELAY);
         }
     }
-
     return ok;
 }
 
-// ===== TASK =====
+// ===== TASK CHÍNH =====
 void Task_Comm(void *pvParameters)
 {
     (void)pvParameters;
-
     Serial.println("[Comm] Task started");
+
+    // --- BƯỚC KHỞI TẠO QUAN TRỌNG (ĐÃ TEST THÀNH CÔNG) ---
+    // Đợi module SIM ổn định và bắt Baudrate 115200
+    vTaskDelay(pdMS_TO_TICKS(5000)); 
+    Serial.println("[Comm] Initializing Modem settings...");
+    for(int i = 0; i < 5; i++) {
+        Serial2.println("AT"); 
+        vTaskDelay(pdMS_TO_TICKS(500));
+    }
+    Serial2.println("ATZ");  // Reset về mặc định
+    vTaskDelay(pdMS_TO_TICKS(1000));
+    Serial2.println("ATE1"); // Bật Echo để quan sát phản hồi
+    vTaskDelay(pdMS_TO_TICKS(500));
+    
+    // Gửi tin nhắn thông báo hệ thống trực tuyến (Tùy chọn)
+    sendWithRetries(alertPhones[0], "TRAM QUAN TRAC PTIT: He thong da Online!", 2);
 
     unsigned long lastAlert = 0;
     unsigned long lastPeriodicSend = 0;
 
-
     Alert_t alert;
     ProcessedSensor_t latest = {0};
-
     bool hasData = false;  
-
     char msgbuf[180];
 
     for (;;)
@@ -58,131 +69,93 @@ void Task_Comm(void *pvParameters)
         unsigned long now = millis();
 
         // =====================================================
-        // 1. NHẬN DATA TỪ PROCESSING
+        // 1. NHẬN DATA TỪ PROCESSING (Để gửi khi có REQ)
         // =====================================================
         if (Queue_Data_Comm != NULL)
         {
-            if (xQueueReceive(Queue_Data_Comm, &latest, pdMS_TO_TICKS(1000)) == pdTRUE)
+            if (xQueueReceive(Queue_Data_Comm, &latest, 0) == pdTRUE) // Đọc không đợi để loop mượt
             {
                 hasData = true;
-
-                Serial.printf("[Comm] Data Updated: T=%.1f H=%.1f\n",
-                              latest.t_avg, latest.h_avg);
+                Serial.printf("[Comm] Data Updated: T=%.1f H=%.1f P=%.1f\n",
+                              latest.t_avg, latest.h_avg, latest.p_avg);
             }
         }
-        else
-        {
-            Serial.println("[Comm] ERROR: Queue_Data_Comm NULL");
-        }
 
         // =====================================================
-        // 2. ALERT SMS
+        // 2. ALERT SMS (Xử lý tin nhắn khẩn cấp)
         // =====================================================
-        if (xQueueReceive(Queue_Alert, &alert, pdMS_TO_TICKS(200)) == pdTRUE)
+        if (xQueueReceive(Queue_Alert, &alert, 0) == pdTRUE)
         {
-            Serial.println("[Comm] ALERT RECEIVED");
-
-            if (now - lastAlert >= 30000)
+            Serial.println("[Comm] ALERT RECEIVED FROM QUEUE");
+            if (now - lastAlert >= 30000) // Cooldown 30s
             {
-                Serial.println("[Comm] Sending ALERT SMS...");
-
                 for (int i = 0; i < alertPhoneCount; i++)
                 {
-                    bool ok = sendWithRetries(alertPhones[i], alert.message, MAX_RETRY);
-
-                    if (ok) Serial.println("[Comm] Alert OK");
-                    else Serial.println("[Comm] Alert FAIL");
-
-                    vTaskDelay(pdMS_TO_TICKS(500));
+                    sendWithRetries(alertPhones[i], alert.message, MAX_RETRY);
                 }
-
                 lastAlert = now;
             }
-            else
-            {
-                Serial.println("[Comm] Alert cooldown...");
+            else {
+                Serial.println("[Comm] Alert cooldown active...");
             }
         }
 
         // =====================================================
-        // 3. NHẬN SMS REQUEST
+        // 3. NHẬN SMS REQUEST (PHẢN HỒI 2 CHIỀU)
         // =====================================================
         String sender, content;
-
-        Serial.println("[Comm] Checking SMS...");
-
+        // Kiểm tra xem có tin nhắn đến không
         while (modem.readSMS(sender, content))
         {
             Serial.println("====== SMS RECEIVED ======");
-            Serial.println(sender);
-            Serial.println(content);
+            Serial.println("From: " + sender);
+            Serial.println("Content: " + content);
 
-            // ⭐ FIX QUAN TRỌNG
             content.trim();
-
             if (content.equalsIgnoreCase("REQUEST") || content.equalsIgnoreCase("REQ"))
             {
-                Serial.println("[Comm] REQUEST detected");
+                Serial.println("[Comm] REQUEST detected -> Preparing Response");
 
-                // ===== TẠO NỘI DUNG =====
-                if (!hasData)
-                {
-                    snprintf(msgbuf, sizeof(msgbuf), "No sensor data");
+                if (!hasData) {
+                    snprintf(msgbuf, sizeof(msgbuf), "Tram PTIT: Chua có du lieu cam bien.");
                 }
-                else
-                {
+                else {
+                    // Tổng hợp toàn bộ thông số trạm quan trắc
                     snprintf(msgbuf, sizeof(msgbuf),
-                             "T=%.1fC H=%.1f%% P=%.1fhPa W=%.1fm/s R=%.1fmm Lat=%.5f Lon=%.5f",
-                             latest.t_avg,
-                             latest.h_avg,
-                             latest.p_avg,
-                             latest.w_avg,
-                             latest.r_avg,
-                             latest.latitude,
-                             latest.longitude);
+                             "PTIT: T=%.1fC, H=%.1f%%, P=%.1fhPa, W:%.1fm/s, R:%.1fmm. GPS:%.5f,%.5f",
+                             latest.t_avg, latest.h_avg, latest.p_avg,
+                             latest.w_avg, latest.r_avg, 
+                             latest.latitude, latest.longitude);
                 }
 
-                Serial.printf("[Comm] Reply to %s\n", sender.c_str());
-
+                Serial.printf("[Comm] Replying to %s\n", sender.c_str());
                 bool ok = sendWithRetries(sender.c_str(), msgbuf, MAX_RETRY);
-
-                if (ok) Serial.println("[Comm] Reply OK");
-                else Serial.println("[Comm] Reply FAIL");
+                if (ok) Serial.println("[Comm] Reply SUCCESS");
+                else Serial.println("[Comm] Reply FAILED");
             }
-            else
-            {
-                Serial.println("[Comm] SMS ignored");
+            else {
+                Serial.println("[Comm] SMS content not recognized, ignoring...");
             }
         }
 
-       // =====================================================
-       // 4. GỬI DỮ LIỆU ĐỊNH KỲ 5 PHÚT
-       // =====================================================
-        if (hasData && (now - lastPeriodicSend >= 300000)) { // 300000 ms = 5 phút
-            snprintf(msgbuf, sizeof(msgbuf),
-                    "T=%.1fC H=%.1f%% P=%.1fhPa W=%.1fm/s R=%.1fmm Lat=%.5f Lon=%.5f",
-                    latest.t_avg,
-                    latest.h_avg,
-                    latest.p_avg,
-                    latest.w_avg,
-                    latest.r_avg,
-                    latest.latitude,
-                    latest.longitude);
+        // =====================================================
+        // 4. GỬI DỮ LIỆU ĐỊNH KỲ (Mỗi 5 phút)
+        // =====================================================
+//         if (hasData && (now - lastPeriodicSend >= 300000)) 
+//         {
+//             snprintf(msgbuf, sizeof(msgbuf),
+//                      "DINH KY: T=%.1fC, H=%.1f%%, P=%.1f, W=%.1f, R=%.1f. GPS:%.5f,%.5f",
+//                      latest.t_avg, latest.h_avg, latest.p_avg, 
+//                      latest.w_avg, latest.r_avg,
+//                      latest.latitude, latest.longitude);
 
-            Serial.println("[Comm] Sending periodic data SMS...");
+//             Serial.println("[Comm] Sending periodic report...");
+//             for (int i = 0; i < alertPhoneCount; i++) {
+//                 sendWithRetries(alertPhones[i], msgbuf, 1); // Định kỳ chỉ thử 1 lần
+//             }
+//             lastPeriodicSend = now;
+//         }
 
-            for (int i = 0; i < alertPhoneCount; i++) {
-                bool ok = sendWithRetries(alertPhones[i], msgbuf, MAX_RETRY);
-                if (ok) Serial.println("[Comm] Periodic SMS OK");
-                else Serial.println("[Comm] Periodic SMS FAIL");
-                vTaskDelay(pdMS_TO_TICKS(500));
-            }
-
-            lastPeriodicSend = now;
-        }
-
-        Serial.println("[Comm] Loop done\n");
-
-        vTaskDelay(pdMS_TO_TICKS(100));
-     }
+//         vTaskDelay(pdMS_TO_TICKS(1000)); // Delay 1s để nhường CPU cho các task khác
+    }
 }
