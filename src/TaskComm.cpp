@@ -186,14 +186,35 @@ void Task_Comm(void *pvParameters)
                     updated = true;
                 }
 
-                if (updated && Queue_Config != NULL)
+                if (updated)
                 {
-                    xQueueSend(Queue_Config, &cfgMsg, 0);
-                    Serial.println("[Comm] Config updated via SMS");
+                    bool updated_now = false;
+                    // Try to update global config directly under mutex for immediate effect
+                    if (Config_Mutex != NULL) {
+                        if (xSemaphoreTake(Config_Mutex, pdMS_TO_TICKS(200)) == pdTRUE) {
+                            g_config = cfgMsg;
+                            xSemaphoreGive(Config_Mutex);
+                            updated_now = true;
+                            Serial.println("[Comm] g_config updated directly via SMS");
+                        } else {
+                            Serial.println("[Comm] Failed to take Config_Mutex to update g_config");
+                        }
+                    }
 
-                    // Gửi SMS xác nhận
-                    snprintf(msgbuf, sizeof(msgbuf), "Config updated OK: %s", content.c_str());
-                    sendWithRetries(sender.c_str(), msgbuf, 1);
+                    // Also try to notify Processing via Queue_Config (best-effort)
+                    if (Queue_Config != NULL) {
+                        if (xQueueSend(Queue_Config, &cfgMsg, pdMS_TO_TICKS(100)) != pdTRUE) {
+                            Serial.println("[Comm] Warning: Queue_Config full, notification not sent");
+                        }
+                    }
+
+                    // Gửi SMS xác nhận (dù queue có đầy, g_config đã được cập nhật nếu mutex thành công)
+                    if (updated_now) {
+                        snprintf(msgbuf, sizeof(msgbuf), "Config updated OK: %s", content.c_str());
+                        sendWithRetries(sender.c_str(), msgbuf, 1);
+                    } else {
+                        sendWithRetries(sender.c_str(), "Config received but mutex unavailable", 1);
+                    }
                 }
                 else
                 {
