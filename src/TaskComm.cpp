@@ -62,7 +62,7 @@ void Task_Comm(void *pvParameters)
     Alert_t alert;
     ProcessedSensor_t latest = {0};
     bool hasData = false;  
-    char msgbuf[256];
+    char msgbuf[400];
 
     for (;;)
     {
@@ -117,12 +117,17 @@ void Task_Comm(void *pvParameters)
                 Serial.println("[Comm] REQUEST detected -> Preparing Response");
 
                 if (!hasData) {
-                    snprintf(msgbuf, sizeof(msgbuf), "Tram PTIT: Chua co du lieu cam bien.");
+                    snprintf(msgbuf, sizeof(msgbuf),
+                        "No sensor data | Config Tw=%.1f Td=%.1f Hw=%.1f Hd=%.1f Wd=%.1f Rd=%.1f Int=%lu ms",
+                        g_config.temp_warn, g_config.temp_danger,
+                        g_config.humi_warn, g_config.humi_danger,
+                        g_config.wind_danger, g_config.rain_danger,
+                        g_config.sample_interval_ms);
                 }
                 else {
                     // Tổng hợp thông số trạm quan trắc + ngưỡng hiện tại
                     snprintf(msgbuf, sizeof(msgbuf),
-                            "PTIT: T=%.1fC, H=%.1f%%, P=%.1fhPa, W=%.1fm/s, R=%.1fmm. GPS:%.5f,%.5f\n"
+                            "PTIT: T=%.1fC, H=%.1f%%, P=%.1fhPa, W=%.1fm/s, R=%.1fmm. GPS:%.5f,%.5f |"
                             "Config: Tw=%.1f Td=%.1f Hw=%.1f Hd=%.1f Wd=%.1f Rd=%.1f Int=%lu ms",
                             latest.t_avg, latest.h_avg, latest.p_avg,
                             latest.w_avg, latest.r_avg,
@@ -135,8 +140,16 @@ void Task_Comm(void *pvParameters)
 
                 Serial.printf("[Comm] Replying to %s\n", sender.c_str());
                 bool ok = sendWithRetries(sender.c_str(), msgbuf, MAX_RETRY);
-                if (ok) Serial.println("[Comm] Reply SUCCESS");
-                else Serial.println("[Comm] Reply FAILED");
+                if (ok) {
+                    Serial.println("[Comm] Reply SUCCESS");
+                } else {
+                    Serial.println("[Comm] Reply FAILED -> trying shorter message");
+                    snprintf(msgbuf, sizeof(msgbuf),
+                            "Reply failed. Config Tw=%.1f Td=%.1f Hw=%.1f Hd=%.1f",
+                            g_config.temp_warn, g_config.temp_danger,
+                            g_config.humi_warn, g_config.humi_danger);
+                    sendWithRetries(sender.c_str(), msgbuf, 1);
+                }
             }
             // --- SET CONFIG ---
             else if (content.startsWith("SET"))

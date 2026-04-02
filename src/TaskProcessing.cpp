@@ -114,26 +114,27 @@ void Task_Processing(void *pvParameters) {
             }
             if (Queue_Data_Comm != NULL) {
                xQueueSend(Queue_Data_Comm, &ps, 0);
+               Serial.println("[Processing] Sent processed data to Comm");
             }
 
             // Output processed values
             Serial.println("---- Processed Sensor Data ----");
-            Serial.print("T_avg: "); Serial.print(T_avg); Serial.print(" C | ");
-            Serial.print("H_avg: "); Serial.print(H_avg); Serial.print(" %\n");
+            // Serial.print("T_avg: "); Serial.print(T_avg); Serial.print(" C | ");
+            // Serial.print("H_avg: "); Serial.print(H_avg); Serial.print(" %\n");
 
-            Serial.print("Pressure_avg: "); Serial.print(P_avg); Serial.print(" hPa | ");
-            Serial.print("Alt (raw): "); Serial.print(raw.altitude); Serial.print(" m\n");
+            // Serial.print("Pressure_avg: "); Serial.print(P_avg); Serial.print(" hPa | ");
+            // Serial.print("Alt (raw): "); Serial.print(raw.altitude); Serial.print(" m\n");
 
-            Serial.print("Wind_avg: "); Serial.print(W_avg); Serial.print(" m/s | ");
-            Serial.print("Rain_avg: "); Serial.print(R_avg); Serial.print(" mm\n");
+            // Serial.print("Wind_avg: "); Serial.print(W_avg); Serial.print(" m/s | ");
+            // Serial.print("Rain_avg: "); Serial.print(R_avg); Serial.print(" mm\n");
 
-            Serial.print("HeatIndex (C): "); Serial.print(heat_c); Serial.print(" | ");
-            Serial.print("RainIndex: "); Serial.print(RainIndex); Serial.print(" | ");
-            Serial.print("WindIndex: "); Serial.println(WindIndex);
+            // Serial.print("HeatIndex (C): "); Serial.print(heat_c); Serial.print(" | ");
+            // Serial.print("RainIndex: "); Serial.print(RainIndex); Serial.print(" | ");
+            // Serial.print("WindIndex: "); Serial.println(WindIndex);
 
-            Serial.print("Vi do: "); Serial.print(lat, 6);
-            Serial.print(" | Kinh do: "); Serial.println(lon, 6);
-            Serial.println("-------------------------------\n");
+            // Serial.print("Vi do: "); Serial.print(lat, 6);
+            // Serial.print(" | Kinh do: "); Serial.println(lon, 6);
+             Serial.println("------------OKE-------------------\n");
         }
     }
 }
