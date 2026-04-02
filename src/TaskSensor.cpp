@@ -14,6 +14,8 @@ extern WindSpeed wind;
 extern Rainfall rain;
 extern GPS gps;
 extern QueueHandle_t Queue_SensorRaw;
+extern SemaphoreHandle_t Config_Mutex;
+extern Config_t g_config;
 
 void Task_Sensor(void *pvParameters) {
     Serial.println("[Task_Sensor] Started");
@@ -85,7 +87,15 @@ void Task_Sensor(void *pvParameters) {
         if (Queue_SensorRaw != NULL) {
             xQueueSend(Queue_SensorRaw, &data, 0);
         }
+        // Lấy chu kỳ lấy mẫu từ g_config (có mutex bảo vệ)
+        uint32_t interval = 3000; // mặc định
+        if (Config_Mutex != NULL) {
+            if (xSemaphoreTake(Config_Mutex, pdMS_TO_TICKS(100)) == pdTRUE) {
+                interval = g_config.sample_interval_ms;
+                xSemaphoreGive(Config_Mutex);
+            }
+        }
 
-        vTaskDelay(pdMS_TO_TICKS(3000));
+        vTaskDelay(pdMS_TO_TICKS(interval));
     }
 }

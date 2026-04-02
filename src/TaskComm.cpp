@@ -133,9 +133,60 @@ void Task_Comm(void *pvParameters)
                 if (ok) Serial.println("[Comm] Reply SUCCESS");
                 else Serial.println("[Comm] Reply FAILED");
             }
+            // --- SET CONFIG ---
+            else if (content.startsWith("SET"))
+            {
+                Config_t cfgMsg = g_config; // copy cấu hình hiện tại
+                bool updated = false;
+
+                if (content.indexOf("TEMP_WARN=") >= 0) {
+                    cfgMsg.temp_warn = content.substring(content.indexOf("=") + 1).toFloat();
+                    updated = true;
+                }
+                else if (content.indexOf("TEMP_DANGER=") >= 0) {
+                    cfgMsg.temp_danger = content.substring(content.indexOf("=") + 1).toFloat();
+                    updated = true;
+                }
+                else if (content.indexOf("HUMI_WARN=") >= 0) {
+                    cfgMsg.humi_warn = content.substring(content.indexOf("=") + 1).toFloat();
+                    updated = true;
+                }
+                else if (content.indexOf("HUMI_DANGER=") >= 0) {
+                    cfgMsg.humi_danger = content.substring(content.indexOf("=") + 1).toFloat();
+                    updated = true;
+                }
+                else if (content.indexOf("WIND_DANGER=") >= 0) {
+                    cfgMsg.wind_danger = content.substring(content.indexOf("=") + 1).toFloat();
+                    updated = true;
+                }
+                else if (content.indexOf("RAIN_DANGER=") >= 0) {
+                    cfgMsg.rain_danger = content.substring(content.indexOf("=") + 1).toFloat();
+                    updated = true;
+                }
+                else if (content.indexOf("SAMPLE_INTERVAL=") >= 0) {
+                    cfgMsg.sample_interval_ms = content.substring(content.indexOf("=") + 1).toInt();
+                    updated = true;
+                }
+
+                if (updated && Queue_Config != NULL)
+                {
+                    xQueueSend(Queue_Config, &cfgMsg, 0);
+                    Serial.println("[Comm] Config updated via SMS");
+
+                    // Gửi SMS xác nhận
+                    snprintf(msgbuf, sizeof(msgbuf), "Config updated OK: %s", content.c_str());
+                    sendWithRetries(sender.c_str(), msgbuf, 1);
+                }
+                else
+                {
+                    sendWithRetries(sender.c_str(), "Config update failed: invalid format", 1);
+                }
+
+            }
             else {
                 Serial.println("[Comm] SMS content not recognized, ignoring...");
             }
+
         }
 
         // =====================================================

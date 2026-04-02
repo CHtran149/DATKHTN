@@ -44,6 +44,8 @@ void Task_Processing(void *pvParameters) {
                             g_config = cfgMsg;
                             xSemaphoreGive(Config_Mutex);
                             Serial.println("[Processing] Updated g_config from Queue_Config");
+                            Serial.printf("[Processing] New sample_interval_ms=%lu, temp_warn=%.1f, humi_warn=%.1f...\n",
+                                g_config.sample_interval_ms, g_config.temp_warn, g_config.humi_warn);
                         }
                     }
                 }
