@@ -5,7 +5,7 @@
 
 // ===== CONFIG =====
 static const char *alertPhones[] = {
-    "+84857749204",
+    "+84327161236",
 };
 static const int alertPhoneCount = sizeof(alertPhones) / sizeof(alertPhones[0]);
 
@@ -54,7 +54,7 @@ void Task_Comm(void *pvParameters)
     vTaskDelay(pdMS_TO_TICKS(500));
     
     // Gửi tin nhắn thông báo hệ thống trực tuyến (Tùy chọn)
-    sendWithRetries(alertPhones[0], "TRAM QUAN TRAC PTIT: He thong da Online!", 2);
+    //sendWithRetries(alertPhones[0], "TRAM QUAN TRAC PTIT: He thong da Online!", 2);
 
     unsigned long lastAlert = 0;
     unsigned long lastPeriodicSend = 0;
