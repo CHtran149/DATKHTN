@@ -78,6 +78,8 @@ static void processSmsState() {
         if (modem.scanFor("OK")) {
             // start CMGS
             char buf[64];
+            // clear any accumulated modem bytes/echo before starting CMGS
+            modem.flushRX();
             snprintf(buf, sizeof(buf), "AT+CMGS=\"%s\"", smsState.req.phone);
             Serial2.println(buf);
             smsState.state = 2;
@@ -169,6 +171,9 @@ void Task_Comm(void *pvParameters)
     vTaskDelay(pdMS_TO_TICKS(1000));
     Serial2.println("ATE1"); // Bật Echo để quan sát phản hồi
     vTaskDelay(pdMS_TO_TICKS(500));
+    // Tắt echo để tránh modem echo được gửi lẫn vào payload SMS
+    Serial2.println("ATE0");
+    vTaskDelay(pdMS_TO_TICKS(200));
     
     // Gửi tin nhắn thông báo hệ thống trực tuyến (Tùy chọn)
     //sendWithRetries(alertPhones[0], "TRAM QUAN TRAC PTIT: He thong da Online!", 2);

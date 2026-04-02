@@ -163,3 +163,13 @@ bool GSM::readSMS(String &sender, String &content)
 bool GSM::scanFor(const char *needle) {
     return waitForResponse(modem, needle, 0);
 }
+
+void GSM::flushRX()
+{
+    respBuf = "";
+    pendingSender = "";
+    pendingHeader = false;
+    while (modem.available()) {
+        modem.read();
+    }
+}
