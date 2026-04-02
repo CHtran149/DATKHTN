@@ -95,7 +95,7 @@ void Task_Sensor(void *pvParameters) {
                 xSemaphoreGive(Config_Mutex);
             }
         }
-
+        if (interval < 100) interval = 100;
         vTaskDelay(pdMS_TO_TICKS(interval));
     }
 }
