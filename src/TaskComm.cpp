@@ -12,26 +12,143 @@ static const int alertPhoneCount = sizeof(alertPhones) / sizeof(alertPhones[0]);
 static const int MAX_RETRY = 3;
 static const TickType_t RETRY_DELAY = pdMS_TO_TICKS(3000);
 
-// ===== RETRY SEND SMS =====
-static bool sendWithRetries(const char *phone, const char *msg, int maxAttempts)
-{
-    int attempts = 0;
-    bool ok = false;
+// ===== Simple internal SMS queue (non-blocking state-machine in Task_Comm) =====
+typedef struct {
+    char phone[32];
+    char msg[384];
+    uint8_t maxAttempts;
+} SMSReq_t;
 
-    while (attempts < maxAttempts && !ok)
-    {
-        attempts++;
-        Serial.printf("[Comm] Sending SMS to %s (try %d)\n", phone, attempts);
+static const int SMS_Q_SIZE = 8;
+static SMSReq_t smsQueue[SMS_Q_SIZE];
+static int sms_q_head = 0;
+static int sms_q_tail = 0;
 
-        ok = modem.sendSMS(phone, msg);
+static bool enqueueSMS(const char *phone, const char *msg, uint8_t maxAttempts) {
+    int next = (sms_q_tail + 1) % SMS_Q_SIZE;
+    if (next == sms_q_head) return false; // full
+    strncpy(smsQueue[sms_q_tail].phone, phone, sizeof(smsQueue[sms_q_tail].phone)-1);
+    smsQueue[sms_q_tail].phone[sizeof(smsQueue[sms_q_tail].phone)-1] = '\0';
+    strncpy(smsQueue[sms_q_tail].msg, msg, sizeof(smsQueue[sms_q_tail].msg)-1);
+    smsQueue[sms_q_tail].msg[sizeof(smsQueue[sms_q_tail].msg)-1] = '\0';
+    smsQueue[sms_q_tail].maxAttempts = maxAttempts;
+    sms_q_tail = next;
+    return true;
+}
 
-        if (!ok)
-        {
-            Serial.println("[Comm] Send failed -> retry...");
-            vTaskDelay(RETRY_DELAY);
+static bool dequeueSMS(SMSReq_t &out) {
+    if (sms_q_head == sms_q_tail) return false;
+    out = smsQueue[sms_q_head];
+    sms_q_head = (sms_q_head + 1) % SMS_Q_SIZE;
+    return true;
+}
+
+// State for current send
+typedef struct {
+    bool active;
+    SMSReq_t req;
+    uint8_t attempts;
+    uint8_t state; // 0 idle,1 sent CMGF wait OK,2 sent CMGS wait '>',3 sent payload wait result
+    uint32_t ts;
+} SMSState_t;
+
+static SMSState_t smsState = {0};
+
+static void processSmsState() {
+    // This function must be called frequently from the main loop
+    if (!smsState.active) {
+        SMSReq_t next;
+        if (dequeueSMS(next)) {
+            smsState.active = true;
+            smsState.req = next;
+            smsState.attempts = 0;
+            smsState.state = 1;
+            smsState.ts = millis();
+            Serial.printf("[Comm] SMS queued -> starting send to %s\n", smsState.req.phone);
+            // send CMGF to ensure text mode
+            Serial2.println("AT+CMGF=1");
+            return;
+        }
+        return;
+    }
+
+    // active send flow
+    if (smsState.state == 1) {
+        // wait for OK from CMGF
+        if (modem.scanFor("OK")) {
+            // start CMGS
+            char buf[64];
+            snprintf(buf, sizeof(buf), "AT+CMGS=\"%s\"", smsState.req.phone);
+            Serial2.println(buf);
+            smsState.state = 2;
+            smsState.ts = millis();
+            return;
+        }
+        if (millis() - smsState.ts > 2000) {
+            // retry sending CMGF
+            Serial2.println("AT+CMGF=1");
+            smsState.ts = millis();
         }
     }
-    return ok;
+    else if (smsState.state == 2) {
+        // wait for '>' prompt
+        if (modem.scanFor(">")) {
+            // send payload
+            Serial2.print(smsState.req.msg);
+            delay(100);
+            Serial2.write(26); // Ctrl+Z
+            smsState.state = 3;
+            smsState.ts = millis();
+            return;
+        }
+        if (millis() - smsState.ts > 5000) {
+            // timeout, retry whole send
+            smsState.attempts++;
+            if (smsState.attempts >= smsState.req.maxAttempts) {
+                Serial.printf("[Comm] SMS send to %s failed after attempts\n", smsState.req.phone);
+                smsState.active = false;
+            } else {
+                Serial.println("[Comm] Prompt timeout, retrying CMGS...");
+                char buf[64];
+                snprintf(buf, sizeof(buf), "AT+CMGS=\"%s\"", smsState.req.phone);
+                Serial2.println(buf);
+                smsState.ts = millis();
+            }
+        }
+    }
+    else if (smsState.state == 3) {
+        // wait for +CMGS or OK or ERROR
+        if (modem.scanFor("+CMGS") || modem.scanFor("OK")) {
+            Serial.printf("[Comm] SMS to %s sent OK\n", smsState.req.phone);
+            smsState.active = false;
+            return;
+        }
+        if (modem.scanFor("ERROR")) {
+            Serial.printf("[Comm] SMS to %s reported ERROR\n", smsState.req.phone);
+            smsState.attempts++;
+            if (smsState.attempts >= smsState.req.maxAttempts) {
+                Serial.printf("[Comm] SMS to %s failed after retries\n", smsState.req.phone);
+                smsState.active = false;
+            } else {
+                // retry: send CMGF and then CMGS again
+                Serial2.println("AT+CMGF=1");
+                smsState.state = 1;
+                smsState.ts = millis();
+            }
+            return;
+        }
+        if (millis() - smsState.ts > 15000) {
+            Serial.printf("[Comm] SMS to %s timeout\n", smsState.req.phone);
+            smsState.attempts++;
+            if (smsState.attempts >= smsState.req.maxAttempts) {
+                smsState.active = false;
+            } else {
+                Serial2.println("AT+CMGF=1");
+                smsState.state = 1;
+                smsState.ts = millis();
+            }
+        }
+    }
 }
 
 // ===== TASK CHÍNH =====
@@ -68,6 +185,9 @@ void Task_Comm(void *pvParameters)
     {
         unsigned long now = millis();
 
+        // Progress SMS sending state-machine (non-blocking)
+        processSmsState();
+
         // =====================================================
         // 1. NHẬN DATA TỪ PROCESSING (Để gửi khi có REQ)
         // =====================================================
@@ -91,7 +211,9 @@ void Task_Comm(void *pvParameters)
             {
                 for (int i = 0; i < alertPhoneCount; i++)
                 {
-                    sendWithRetries(alertPhones[i], alert.message, MAX_RETRY);
+                    if (!enqueueSMS(alertPhones[i], alert.message, MAX_RETRY)) {
+                        Serial.println("[Comm] Warning: SMS queue full, alert not enqueued");
+                    }
                 }
                 lastAlert = now;
             }
@@ -139,16 +261,8 @@ void Task_Comm(void *pvParameters)
                 }
 
                 Serial.printf("[Comm] Replying to %s\n", sender.c_str());
-                bool ok = sendWithRetries(sender.c_str(), msgbuf, MAX_RETRY);
-                if (ok) {
-                    Serial.println("[Comm] Reply SUCCESS");
-                } else {
-                    Serial.println("[Comm] Reply FAILED -> trying shorter message");
-                    snprintf(msgbuf, sizeof(msgbuf),
-                            "Reply failed. Config Tw=%.1f Td=%.1f Hw=%.1f Hd=%.1f",
-                            g_config.temp_warn, g_config.temp_danger,
-                            g_config.humi_warn, g_config.humi_danger);
-                    sendWithRetries(sender.c_str(), msgbuf, 1);
+                if (!enqueueSMS(sender.c_str(), msgbuf, MAX_RETRY)) {
+                    Serial.println("[Comm] Warning: SMS queue full, reply not enqueued");
                 }
             }
             // --- SET CONFIG ---
@@ -211,14 +325,14 @@ void Task_Comm(void *pvParameters)
                     // Gửi SMS xác nhận (dù queue có đầy, g_config đã được cập nhật nếu mutex thành công)
                     if (updated_now) {
                         snprintf(msgbuf, sizeof(msgbuf), "Config updated OK: %s", content.c_str());
-                        sendWithRetries(sender.c_str(), msgbuf, 1);
+                        if (!enqueueSMS(sender.c_str(), msgbuf, 1)) Serial.println("[Comm] Warning: SMS queue full, confirm not enqueued");
                     } else {
-                        sendWithRetries(sender.c_str(), "Config received but mutex unavailable", 1);
+                        if (!enqueueSMS(sender.c_str(), "Config received but mutex unavailable", 1)) Serial.println("[Comm] Warning: SMS queue full, confirm not enqueued");
                     }
                 }
                 else
                 {
-                    sendWithRetries(sender.c_str(), "Config update failed: invalid format", 1);
+                    if (!enqueueSMS(sender.c_str(), "Config update failed: invalid format", 1)) Serial.println("[Comm] Warning: SMS queue full, error not enqueued");
                 }
 
             }

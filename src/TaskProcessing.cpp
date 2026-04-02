@@ -102,19 +102,28 @@ void Task_Processing(void *pvParameters) {
 
             // Send processed data to FSM input queue (non-blocking)
             if (Queue_FSM_Input != NULL) {
-                xQueueSend(Queue_FSM_Input, &ps, 0);
+                if (xQueueSend(Queue_FSM_Input, &ps, 0) != pdTRUE) {
+                    Serial.println("[Processing] Warning: Queue_FSM_Input full, drop data");
+                }
             }
 
             // Also send processed data to both Blynk and Cloud queues
             if (Queue_Data_Blynk != NULL) {
-                xQueueSend(Queue_Data_Blynk, &ps,0);
+                if (xQueueSend(Queue_Data_Blynk, &ps, 0) != pdTRUE) {
+                    Serial.println("[Processing] Warning: Queue_Data_Blynk full, drop data");
+                }
             }
             if (Queue_Data_Cloud != NULL) {
-                xQueueSend(Queue_Data_Cloud, &ps,0);
+                if (xQueueSend(Queue_Data_Cloud, &ps, 0) != pdTRUE) {
+                    Serial.println("[Processing] Warning: Queue_Data_Cloud full, drop data");
+                }
             }
             if (Queue_Data_Comm != NULL) {
-               xQueueSend(Queue_Data_Comm, &ps, 0);
-               Serial.println("[Processing] Sent processed data to Comm");
+               if (xQueueSend(Queue_Data_Comm, &ps, 0) != pdTRUE) {
+                   Serial.println("[Processing] Warning: Queue_Data_Comm full, drop data");
+               } else {
+                   Serial.println("[Processing] Sent processed data to Comm");
+               }
             }
 
             // Output processed values
