@@ -49,6 +49,7 @@ void Task_Cloud(void *pvParameters) {
                     Serial.printf("[Cloud] Upload failed, error: %s\n", http.errorToString(httpResponseCode).c_str());
                 }
                 http.end();
+                vTaskDelay(pdMS_TO_TICKS(300000)); // 5 phút
             }
         }
     }
