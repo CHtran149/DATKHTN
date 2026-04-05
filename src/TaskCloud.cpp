@@ -5,15 +5,14 @@
 #include "SensorTypes.h"
 
 // WiFi and server configuration - replace with real values
-const char* CLOUD_SSID = "YOUR_WIFI_SSID";
-const char* CLOUD_PASS = "YOUR_WIFI_PASS";
-const char* SERVER_URL = "https://script.google.com/macros/s/AKfycbz9v6RiECnLMrJV_VXq0IcMJbGvXppx0i_nK9uNAEdTrpLI_aBqAzpiJOUctR7-lbyC/exec";
+#include "../include/secrets.h"
+const char* SERVER_URL = "https://script.google.com/macros/s/AKfycbzvZ9byc_0WE4hj_wJGp2FeTVgOQZnaqoZ0LWTfRrdlezDByqva4cQ0qPsMccSVdQC9/exec";
 
 void Task_Cloud(void *pvParameters) {
     ProcessedSensor_t data;
 
     Serial.println("[Cloud] Connecting WiFi...");
-    WiFi.begin(CLOUD_SSID, CLOUD_PASS);
+    WiFi.begin(WIFI_SSID, WIFI_PASS);
     int tries = 0;
     while (WiFi.status() != WL_CONNECTED && tries++ < 60) {
         delay(250);
@@ -38,6 +37,10 @@ void Task_Cloud(void *pvParameters) {
                 payload += "\"heat_index\":" + String(data.heat_index_c, 2) + ",";
                 payload += "\"timestamp\":" + String(data.timestamp);
                 payload += "}";
+
+                // Debug: print JSON payload before POSTing
+                Serial.print("[Cloud] Payload: ");
+                Serial.println(payload);
 
                 int httpResponseCode = http.POST(payload);
                 if (httpResponseCode > 0) {

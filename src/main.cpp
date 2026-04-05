@@ -97,8 +97,8 @@ void setup() {
     xTaskCreatePinnedToCore(Task_Blynk,"Task_Blynk",8192,NULL,1,NULL,0);
     Serial.println("Task_Blynk created");
 
-   // xTaskCreatePinnedToCore(Task_Cloud,"Task_Cloud",8192,NULL,1,NULL,0);
-    //Serial.println("Task_Cloud created");
+    xTaskCreatePinnedToCore(Task_Cloud,"Task_Cloud",8192,NULL,1,NULL,0);
+    Serial.println("Task_Cloud created");
     
     Serial.println("All tasks started");
 }

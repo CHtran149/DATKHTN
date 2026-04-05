@@ -8,12 +8,11 @@
 #include <BlynkSimpleEsp32.h>
 #include "TaskBlynk.h"
 #include "SensorTypes.h"
+#include "../include/secrets.h"
 
 // WiFi & Blynk credentials - replace with your real values
 
 
-const char* WIFI_SSID = "Phòng 603";
-const char* WIFI_PASS = "88888888";
 char BLYNK_AUTH[] = "quJvZhMQWTpMf1iH46-NKmk87DaGqUf6";
 
 // Virtual pin mapping (adjust in Blynk app)
