@@ -128,6 +128,7 @@ BLYNK_WRITE(V14) {
 
 void Task_Blynk(void *pvParameters) {
     ProcessedSensor_t data;
+    unsigned long lastSync = 0;
 
     Serial.println("[Blynk] Connecting WiFi...");
     WiFi.begin(WIFI_SSID, WIFI_PASS);
@@ -152,8 +153,6 @@ void Task_Blynk(void *pvParameters) {
         }
     }
 
-
-
     while (1) {
         Blynk.run();
         if (Queue_Data_Blynk != NULL) {
@@ -174,6 +173,21 @@ void Task_Blynk(void *pvParameters) {
               //  Serial.printf("[Blynk] Sent T=%.2f H=%.2f P=%.2f W=%.2f R=%.2f\n",
                            //   data.t_avg, data.h_avg, data.p_avg, data.w_avg, data.r_avg);
             }
+        }
+
+                // Đồng bộ slider mỗi 5 giây
+        if (millis() - lastSync > 5000) {
+            if (Config_Mutex != NULL) {
+                if (xSemaphoreTake(Config_Mutex, pdMS_TO_TICKS(50)) == pdTRUE) {
+                    Blynk.virtualWrite(V10, g_config.temp_warn);
+                    Blynk.virtualWrite(V11, g_config.temp_danger);
+                    Blynk.virtualWrite(V12, g_config.wind_danger);
+                    Blynk.virtualWrite(V13, g_config.rain_danger);
+                    Blynk.virtualWrite(V14, g_config.sample_interval_ms);
+                    xSemaphoreGive(Config_Mutex);
+                }
+            }
+            lastSync = millis();
         }
 
         vTaskDelay(pdMS_TO_TICKS(100)); // delay vừa phải
