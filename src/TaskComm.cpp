@@ -15,7 +15,7 @@ static const TickType_t RETRY_DELAY = pdMS_TO_TICKS(3000);
 // ===== Simple internal SMS queue (non-blocking state-machine in Task_Comm) =====
 typedef struct {
     char phone[32];
-    char msg[512];
+    char msg[384];
     uint8_t maxAttempts;
 } SMSReq_t;
 
@@ -254,8 +254,7 @@ void Task_Comm(void *pvParameters)
                 else {
                     // Tổng hợp thông số trạm quan trắc + ngưỡng hiện tại
                     snprintf(msgbuf, sizeof(msgbuf),
-                            "PTIT: T=%.1fC, H=%.1f%%, P=%.1fhPa, W=%.1fm/s, R=%.1fmm. |"
-                            "Map: https://www.google.com/maps?q=%.5f,%.5f | "
+                            "PTIT: T=%.1fC, H=%.1f%%, P=%.1fhPa, W=%.1fm/s, R=%.1fmm, GPS:%.5f,%.5f |"
                             "Config: Tw=%.1f Td=%.1f Hw=%.1f Hd=%.1f Wd=%.1f Rd=%.1f Int=%lu ms",
                             latest.t_avg, latest.h_avg, latest.p_avg,
                             latest.w_avg, latest.r_avg,

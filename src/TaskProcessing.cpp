@@ -145,5 +145,6 @@ void Task_Processing(void *pvParameters) {
             // Serial.print(" | Kinh do: "); Serial.println(lon, 6);
              Serial.println("------------OKE-------------------\n");
         }
+        vTaskDelay(pdMS_TO_TICKS(g_config.sample_interval_ms));
     }
 }

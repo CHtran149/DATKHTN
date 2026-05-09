@@ -68,7 +68,7 @@ void setup() {
     Queue_Alert = xQueueCreate(5, sizeof(Alert_t));
     Queue_Data_Comm = xQueueCreate(20, sizeof(ProcessedSensor_t));
     Queue_Data_Blynk = xQueueCreate(8, sizeof(ProcessedSensor_t));
-    Queue_Data_Cloud = xQueueCreate(8, sizeof(ProcessedSensor_t));
+    Queue_Data_Cloud = xQueueCreate(30, sizeof(ProcessedSensor_t));
     Queue_Config = xQueueCreate(8, sizeof(Config_t));
     Config_Mutex = xSemaphoreCreateMutex();
     Event_Weather = xEventGroupCreate();
