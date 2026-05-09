@@ -141,11 +141,17 @@ void Task_Blynk(void *pvParameters) {
     // Dùng begin để tự động reconnect
     Blynk.begin(BLYNK_AUTH, WIFI_SSID, WIFI_PASS);
 
-    Blynk.virtualWrite(V10, g_config.temp_warn);
-    Blynk.virtualWrite(V11, g_config.temp_danger);
-    Blynk.virtualWrite(V12, g_config.wind_danger);
-    Blynk.virtualWrite(V13, g_config.rain_danger);
-    Blynk.virtualWrite(V14, g_config.sample_interval_ms);
+    if (Config_Mutex != NULL) {
+        if (xSemaphoreTake(Config_Mutex, pdMS_TO_TICKS(100)) == pdTRUE) {
+            Blynk.virtualWrite(V10, g_config.temp_warn);
+            Blynk.virtualWrite(V11, g_config.temp_danger);
+            Blynk.virtualWrite(V12, g_config.wind_danger);
+            Blynk.virtualWrite(V13, g_config.rain_danger);
+            Blynk.virtualWrite(V14, g_config.sample_interval_ms);
+            xSemaphoreGive(Config_Mutex);
+        }
+    }
+
 
 
     while (1) {
