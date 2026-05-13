@@ -14,7 +14,7 @@
 
 
 char BLYNK_AUTH[] = "quJvZhMQWTpMf1iH46-NKmk87DaGqUf6";
-
+Config_t cfgMsg;
 // Virtual pin mapping (adjust in Blynk app)
 #define VPIN_T_AVG  V1 // Temperature average virtual pin
 #define VPIN_H_AVG  V2 // Humidity average virtual pin
@@ -175,19 +175,15 @@ void Task_Blynk(void *pvParameters) {
             }
         }
 
-                // Đồng bộ slider mỗi 5 giây
-        if (millis() - lastSync > 5000) {
-            if (Config_Mutex != NULL) {
-                if (xSemaphoreTake(Config_Mutex, pdMS_TO_TICKS(50)) == pdTRUE) {
-                    Blynk.virtualWrite(V10, g_config.temp_warn);
-                    Blynk.virtualWrite(V11, g_config.temp_danger);
-                    Blynk.virtualWrite(V12, g_config.wind_danger);
-                    Blynk.virtualWrite(V13, g_config.rain_danger);
-                    Blynk.virtualWrite(V14, g_config.sample_interval_ms);
-                    xSemaphoreGive(Config_Mutex);
-                }
+        // Nhận config mới từ SMS để cập nhật slider
+        if (Queue_BlynkSync != NULL) {
+            if (xQueueReceive(Queue_BlynkSync, &cfgMsg, 0) == pdTRUE) {
+                Blynk.virtualWrite(V10, cfgMsg.temp_warn);
+                Blynk.virtualWrite(V11, cfgMsg.temp_danger);
+                Blynk.virtualWrite(V12, cfgMsg.wind_danger);
+                Blynk.virtualWrite(V13, cfgMsg.rain_danger);
+                Blynk.virtualWrite(V14, cfgMsg.sample_interval_ms);
             }
-            lastSync = millis();
         }
 
         vTaskDelay(pdMS_TO_TICKS(100)); // delay vừa phải

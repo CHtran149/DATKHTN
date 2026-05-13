@@ -327,6 +327,12 @@ void Task_Comm(void *pvParameters)
                         }
                     }
 
+                    if (Queue_BlynkSync != NULL) {
+                        if (xQueueSend(Queue_BlynkSync, &cfgMsg, pdMS_TO_TICKS(100)) != pdTRUE) {
+                            Serial.println("[Comm] Warning: Queue_BlynkSync full, notification not sent");
+                        }
+                    }
+
                     // Gửi SMS xác nhận (dù queue có đầy, g_config đã được cập nhật nếu mutex thành công)
                     if (updated_now) {
                         snprintf(msgbuf, sizeof(msgbuf), "Config updated OK: %s", content.c_str());
@@ -346,25 +352,5 @@ void Task_Comm(void *pvParameters)
             }
 
         }
-
-        // =====================================================
-        // 4. GỬI DỮ LIỆU ĐỊNH KỲ (Mỗi 5 phút)
-        // =====================================================
-//         if (hasData && (now - lastPeriodicSend >= 300000)) 
-//         {
-//             snprintf(msgbuf, sizeof(msgbuf),
-//                      "DINH KY: T=%.1fC, H=%.1f%%, P=%.1f, W=%.1f, R=%.1f. GPS:%.5f,%.5f",
-//                      latest.t_avg, latest.h_avg, latest.p_avg, 
-//                      latest.w_avg, latest.r_avg,
-//                      latest.latitude, latest.longitude);
-
-//             Serial.println("[Comm] Sending periodic report...");
-//             for (int i = 0; i < alertPhoneCount; i++) {
-//                 sendWithRetries(alertPhones[i], msgbuf, 1); // Định kỳ chỉ thử 1 lần
-//             }
-//             lastPeriodicSend = now;
-//         }
-
-//         vTaskDelay(pdMS_TO_TICKS(1000)); // Delay 1s để nhường CPU cho các task khác
     }
 }
