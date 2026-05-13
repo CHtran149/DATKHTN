@@ -73,18 +73,18 @@ void Task_Processing(void *pvParameters) {
             int WindIndex = (int)constrain(W_avg * 10.0f, 0, 100);
 
              // ===== DOI GPS SANG DANG THAP PHAN (AN TOAN) =====
-             float lat = 0.0f;
+            float lat = 0.0f;
             float lon = 0.0f;
 
-    // Chỉ tính toán nếu dữ liệu GPS không bị trống (ví dụ độ độ không phải là 0)
-    // Hoặc tốt nhất là thêm cờ valid vào SensorRaw_t
-    if (raw.lat_deg != 0 || raw.lon_deg != 0) {
-             lat = (float)raw.lat_deg + (float)raw.lat_min / 60.0f + (float)raw.lat_sec / 3600.0f;
-            lon = (float)raw.lon_deg + (float)raw.lon_min / 60.0f + (float)raw.lon_sec / 3600.0f;
-    
-            if (raw.lat_dir == 'S') lat = -lat;
-             if (raw.lon_dir == 'W') lon = -lon;
-    }
+            // Chỉ tính toán nếu dữ liệu GPS không bị trống (ví dụ độ độ không phải là 0)
+            // Hoặc tốt nhất là thêm cờ valid vào SensorRaw_t
+            if (raw.lat_deg != 0 || raw.lon_deg != 0) {
+                    lat = (float)raw.lat_deg + (float)raw.lat_min / 60.0f + (float)raw.lat_sec / 3600.0f;
+                    lon = (float)raw.lon_deg + (float)raw.lon_min / 60.0f + (float)raw.lon_sec / 3600.0f;
+            
+                    if (raw.lat_dir == 'S') lat = -lat;
+                    if (raw.lon_dir == 'W') lon = -lon;
+            }
 
             // Build processed message to send to FSM
             ProcessedSensor_t ps;
@@ -98,53 +98,35 @@ void Task_Processing(void *pvParameters) {
             ps.wind_index = WindIndex;
             ps.latitude = lat;
             ps.longitude = lon;
-            ps.timestamp = raw.timestamp;
 
             // Send processed data to FSM input queue (non-blocking)
             if (Queue_FSM_Input != NULL) {
                 if (xQueueSend(Queue_FSM_Input, &ps, 0) != pdTRUE) {
-                    Serial.println("[Processing] Warning: Queue_FSM_Input full, drop data");
                 }
             }
 
             // Also send processed data to both Blynk and Cloud queues
             if (Queue_Data_Blynk != NULL) {
                 if (xQueueSend(Queue_Data_Blynk, &ps, 0) != pdTRUE) {
-                    Serial.println("[Processing] Warning: Queue_Data_Blynk full, drop data");
                 }
             }
             if (Queue_Data_Cloud != NULL) {
                 if (xQueueSend(Queue_Data_Cloud, &ps, 0) != pdTRUE) {
-                    Serial.println("[Processing] Warning: Queue_Data_Cloud full, drop data");
                 }
             }
             if (Queue_Data_Comm != NULL) {
                if (xQueueSend(Queue_Data_Comm, &ps, 0) != pdTRUE) {
-                   Serial.println("[Processing] Warning: Queue_Data_Comm full, drop data");
-               } else {
-                   Serial.println("[Processing] Sent processed data to Comm");
                }
             }
-
-            // Output processed values
-            Serial.println("---- Processed Sensor Data ----");
-            // Serial.print("T_avg: "); Serial.print(T_avg); Serial.print(" C | ");
-            // Serial.print("H_avg: "); Serial.print(H_avg); Serial.print(" %\n");
-
-            // Serial.print("Pressure_avg: "); Serial.print(P_avg); Serial.print(" hPa | ");
-            // Serial.print("Alt (raw): "); Serial.print(raw.altitude); Serial.print(" m\n");
-
-            // Serial.print("Wind_avg: "); Serial.print(W_avg); Serial.print(" m/s | ");
-            // Serial.print("Rain_avg: "); Serial.print(R_avg); Serial.print(" mm\n");
-
-            // Serial.print("HeatIndex (C): "); Serial.print(heat_c); Serial.print(" | ");
-            // Serial.print("RainIndex: "); Serial.print(RainIndex); Serial.print(" | ");
-            // Serial.print("WindIndex: "); Serial.println(WindIndex);
-
-            // Serial.print("Vi do: "); Serial.print(lat, 6);
-            // Serial.print(" | Kinh do: "); Serial.println(lon, 6);
-             Serial.println("------------OKE-------------------\n");
         }
-        vTaskDelay(pdMS_TO_TICKS(g_config.sample_interval_ms));
+        uint32_t interval = 1000;
+        if (Config_Mutex != NULL) {
+            if (xSemaphoreTake(Config_Mutex, pdMS_TO_TICKS(50)) == pdTRUE) {
+                interval = g_config.sample_interval_ms;
+                xSemaphoreGive(Config_Mutex);
+            }
+        }
+        vTaskDelay(pdMS_TO_TICKS(interval));
+
     }
 }

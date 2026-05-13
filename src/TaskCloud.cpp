@@ -6,7 +6,7 @@
 
 // WiFi and server configuration - replace with real values
 #include "../include/secrets.h"
-const char* SERVER_URL = "https://script.google.com/macros/s/AKfycbzvZ9byc_0WE4hj_wJGp2FeTVgOQZnaqoZ0LWTfRrdlezDByqva4cQ0qPsMccSVdQC9/exec";
+const char* SERVER_URL = "https://script.google.com/macros/s/AKfycbzNE1L2Q7vH0LHQfIGlifAbgGkxnEL_4rnXRfoGl-iAck9LssDMeJM5BmemERRmaWkT/exec";
 
 void Task_Cloud(void *pvParameters) {
     ProcessedSensor_t data;
@@ -35,7 +35,10 @@ void Task_Cloud(void *pvParameters) {
                 payload += "\"wind\":" + String(data.w_avg, 2) + ",";
                 payload += "\"rain\":" + String(data.r_avg, 2) + ",";
                 payload += "\"heat_index\":" + String(data.heat_index_c, 2) + ",";
-                payload += "\"timestamp\":" + String(data.timestamp);
+                payload += "\"rain_index\":" + String(data.rain_index) + ",";
+                payload += "\"wind_index\":" + String(data.wind_index) + ",";
+                payload += "\"latitude\":" + String(data.latitude, 6) + ",";
+                payload += "\"longitude\":" + String(data.longitude, 6);
                 payload += "}";
 
                 // Debug: print JSON payload before POSTing
