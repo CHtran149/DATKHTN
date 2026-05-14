@@ -61,7 +61,7 @@ extern QueueHandle_t Queue_Config;     // carries Config_t from Blynk to Process
 extern SemaphoreHandle_t Config_Mutex; // protects g_config
 extern QueueHandle_t Queue_Data_Comm;
 extern QueueHandle_t Queue_BlynkSync;
-
+extern QueueHandle_t Queue_CommSync;
 // Global configuration structure
 typedef struct {
     uint32_t sample_interval_ms;

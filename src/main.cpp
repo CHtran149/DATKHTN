@@ -38,6 +38,7 @@ QueueHandle_t Queue_Config;
 SemaphoreHandle_t Config_Mutex;
 QueueHandle_t Queue_Data_Comm;
 QueueHandle_t Queue_BlynkSync;
+QueueHandle_t Queue_CommSync;
 // define global config
 Config_t g_config;
 
@@ -72,6 +73,7 @@ void setup() {
     Queue_Data_Cloud = xQueueCreate(30, sizeof(ProcessedSensor_t));
     Queue_Config = xQueueCreate(8, sizeof(Config_t));
     Queue_BlynkSync = xQueueCreate(8, sizeof(Config_t));
+    Queue_CommSync = xQueueCreate(8, sizeof(Config_t));
     Config_Mutex = xSemaphoreCreateMutex();
     Event_Weather = xEventGroupCreate();
 

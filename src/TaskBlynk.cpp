@@ -31,10 +31,14 @@ BLYNK_WRITE(V10) {
 
     if (Config_Mutex != NULL) {
         if (xSemaphoreTake(Config_Mutex, pdMS_TO_TICKS(100)) == pdTRUE) {
-            cfgMsg = g_config;          // copy an toàn
-            cfgMsg.temp_warn = val;
+            cfgMsg = g_config;          // copy toàn bộ config hiện tại
+            cfgMsg.temp_warn = val;     // sửa đúng trường
             xSemaphoreGive(Config_Mutex);
         }
+    }
+    if (Queue_CommSync != NULL) {
+        xQueueSend(Queue_CommSync, &cfgMsg, 0);
+        Serial.println("[Blynk] Sent config update to Task_Comm");
     }
 
     if (Queue_Config != NULL) {
@@ -50,10 +54,15 @@ BLYNK_WRITE(V11) {
 
     if (Config_Mutex != NULL) {
         if (xSemaphoreTake(Config_Mutex, pdMS_TO_TICKS(100)) == pdTRUE) {
-            cfgMsg = g_config;          // copy an toàn
-            cfgMsg.temp_danger = val;
+            cfgMsg = g_config;          // copy toàn bộ config hiện tại
+            cfgMsg.temp_danger = val;  // sửa đúng trường
             xSemaphoreGive(Config_Mutex);
         }
+    }
+
+    if (Queue_CommSync != NULL) {
+        xQueueSend(Queue_CommSync, &cfgMsg, 0);
+        Serial.println("[Blynk] Sent config update to Task_Comm");
     }
 
     if (Queue_Config != NULL) {
@@ -69,11 +78,16 @@ BLYNK_WRITE(V12) {
 
     if (Config_Mutex != NULL) {
         if (xSemaphoreTake(Config_Mutex, pdMS_TO_TICKS(100)) == pdTRUE) {
-            cfgMsg = g_config;          // copy an toàn
-            cfgMsg.wind_danger = val;
+            cfgMsg = g_config;          // copy toàn bộ config hiện tại
+            cfgMsg.wind_danger = val;  // sửa đúng trường
             xSemaphoreGive(Config_Mutex);
         }
     }
+
+    if (Queue_CommSync != NULL) {
+        xQueueSend(Queue_CommSync, &cfgMsg, 0);
+        Serial.println("[Blynk] Sent config update to Task_Comm");
+    } 
 
     if (Queue_Config != NULL) {
         xQueueSend(Queue_Config, &cfgMsg, 0);
@@ -88,10 +102,15 @@ BLYNK_WRITE(V13) {
 
     if (Config_Mutex != NULL) {
         if (xSemaphoreTake(Config_Mutex, pdMS_TO_TICKS(100)) == pdTRUE) {
-            cfgMsg = g_config;          // copy an toàn
-            cfgMsg.rain_danger = val;
+            cfgMsg = g_config;          // copy toàn bộ config hiện tại
+            cfgMsg.rain_danger = val;  // sửa đúng trường
             xSemaphoreGive(Config_Mutex);
         }
+    }
+
+    if (Queue_CommSync != NULL) {
+        xQueueSend(Queue_CommSync, &cfgMsg, 0);
+        Serial.println("[Blynk] Sent config update to Task_Comm");
     }
 
     if (Queue_Config != NULL) {
@@ -106,13 +125,17 @@ BLYNK_WRITE(V14) {
     if (val < 100) val = 100; // đảm bảo không bằng 0
 
     Config_t cfgMsg;
-
-    // Bảo vệ khi đọc g_config bằng mutex
     if (Config_Mutex != NULL) {
         if (xSemaphoreTake(Config_Mutex, pdMS_TO_TICKS(100)) == pdTRUE) {
-            cfgMsg = g_config; // copy an toàn
+            cfgMsg = g_config;              // copy toàn bộ config hiện tại
+            cfgMsg.sample_interval_ms = val; // sửa đúng trường
             xSemaphoreGive(Config_Mutex);
         }
+    }
+
+    if (Queue_CommSync != NULL) {
+        xQueueSend(Queue_CommSync, &cfgMsg, 0);
+        Serial.println("[Blynk] Sent config update to Task_Comm");
     }
 
     // Cập nhật giá trị mới

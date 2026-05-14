@@ -186,6 +186,7 @@ void Task_Comm(void *pvParameters)
     bool hasData = false;  
     char msgbuf[400];
 
+    Config_t cfgFromBlynk;    
     for (;;)
     {
         unsigned long now = millis();
@@ -230,6 +231,20 @@ void Task_Comm(void *pvParameters)
         // =====================================================
         // 3. NHẬN SMS REQUEST (PHẢN HỒI 2 CHIỀU)
         // =====================================================
+
+        // Nhận config mới từ Blynk
+        if (Queue_CommSync != NULL) {
+            if (xQueueReceive(Queue_CommSync, &cfgFromBlynk, 0) == pdTRUE) {
+                if (Config_Mutex != NULL) {
+                    if (xSemaphoreTake(Config_Mutex, pdMS_TO_TICKS(200)) == pdTRUE) {
+                        g_config = cfgFromBlynk;   // cập nhật global config
+                        xSemaphoreGive(Config_Mutex);
+                    }
+                }
+            }
+        }
+
+
         String sender, content;
         // Kiểm tra xem có tin nhắn đến không
         while (modem.readSMS(sender, content))
@@ -273,35 +288,35 @@ void Task_Comm(void *pvParameters)
             // --- SET CONFIG ---
             else if (content.startsWith("SET"))
             {
-                Config_t cfgMsg = g_config; // copy cấu hình hiện tại
+                Config_t cfgFromSMS = g_config; // copy cấu hình hiện tại
                 bool updated = false;
 
                 if (content.indexOf("TEMP_WARN=") >= 0) {
-                    cfgMsg.temp_warn = content.substring(content.indexOf("=") + 1).toFloat();
+                    cfgFromSMS.temp_warn = content.substring(content.indexOf("=") + 1).toFloat();
                     updated = true;
                 }
                 else if (content.indexOf("TEMP_DANGER=") >= 0) {
-                    cfgMsg.temp_danger = content.substring(content.indexOf("=") + 1).toFloat();
+                    cfgFromSMS.temp_danger = content.substring(content.indexOf("=") + 1).toFloat();
                     updated = true;
                 }
                 else if (content.indexOf("HUMI_WARN=") >= 0) {
-                    cfgMsg.humi_warn = content.substring(content.indexOf("=") + 1).toFloat();
+                    cfgFromSMS.humi_warn = content.substring(content.indexOf("=") + 1).toFloat();
                     updated = true;
                 }
                 else if (content.indexOf("HUMI_DANGER=") >= 0) {
-                    cfgMsg.humi_danger = content.substring(content.indexOf("=") + 1).toFloat();
+                    cfgFromSMS.humi_danger = content.substring(content.indexOf("=") + 1).toFloat();
                     updated = true;
                 }
                 else if (content.indexOf("WIND_DANGER=") >= 0) {
-                    cfgMsg.wind_danger = content.substring(content.indexOf("=") + 1).toFloat();
+                    cfgFromSMS.wind_danger = content.substring(content.indexOf("=") + 1).toFloat();
                     updated = true;
                 }
                 else if (content.indexOf("RAIN_DANGER=") >= 0) {
-                    cfgMsg.rain_danger = content.substring(content.indexOf("=") + 1).toFloat();
+                    cfgFromSMS.rain_danger = content.substring(content.indexOf("=") + 1).toFloat();
                     updated = true;
                 }
                 else if (content.indexOf("SAMPLE_INTERVAL=") >= 0) {
-                    cfgMsg.sample_interval_ms = content.substring(content.indexOf("=") + 1).toInt();
+                    cfgFromSMS.sample_interval_ms = content.substring(content.indexOf("=") + 1).toInt();
                     updated = true;
                 }
 
@@ -311,7 +326,7 @@ void Task_Comm(void *pvParameters)
                     // Try to update global config directly under mutex for immediate effect
                     if (Config_Mutex != NULL) {
                         if (xSemaphoreTake(Config_Mutex, pdMS_TO_TICKS(200)) == pdTRUE) {
-                            g_config = cfgMsg;
+                            g_config = cfgFromSMS;
                             xSemaphoreGive(Config_Mutex);
                             updated_now = true;
                             Serial.println("[Comm] g_config updated directly via SMS");
@@ -322,13 +337,13 @@ void Task_Comm(void *pvParameters)
 
                     // Also try to notify Processing via Queue_Config (best-effort)
                     if (Queue_Config != NULL) {
-                        if (xQueueSend(Queue_Config, &cfgMsg, pdMS_TO_TICKS(100)) != pdTRUE) {
+                        if (xQueueSend(Queue_Config, &cfgFromSMS, pdMS_TO_TICKS(100)) != pdTRUE) {
                             Serial.println("[Comm] Warning: Queue_Config full, notification not sent");
                         }
                     }
 
                     if (Queue_BlynkSync != NULL) {
-                        if (xQueueSend(Queue_BlynkSync, &cfgMsg, pdMS_TO_TICKS(100)) != pdTRUE) {
+                        if (xQueueSend(Queue_BlynkSync, &cfgFromSMS, pdMS_TO_TICKS(100)) != pdTRUE) {
                             Serial.println("[Comm] Warning: Queue_BlynkSync full, notification not sent");
                         }
                     }
