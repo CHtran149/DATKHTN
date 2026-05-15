@@ -27,7 +27,7 @@ static float heatIndexC(float T_c, float RH) {
                - 6.83783e-3f * T * T - 5.481717e-2f * R * R
                + 1.22874e-3f * T * T * R + 8.5282e-4f * T * R * R - 1.99e-6f * T * T * R * R;
    //  convert back to C
-    return (HI - 32.0f) * 1.8f;
+    return (HI - 32.0f) / 1.8f;
 }
 
 void Task_Processing(void *pvParameters) {
