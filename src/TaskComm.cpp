@@ -22,7 +22,7 @@ typedef struct {
 static const int SMS_Q_SIZE = 8;
 static SMSReq_t smsQueue[SMS_Q_SIZE];
 static int sms_q_head = 0;
-static int sms_q_tail = 0;
+static int sms_q_tail = 0;  
 
 static bool enqueueSMS(const char *phone, const char *msg, uint8_t maxAttempts) {
     int next = (sms_q_tail + 1) % SMS_Q_SIZE;
