@@ -1,0 +1,6 @@
+(fp_lib_table
+	(version 7)
+	(lib (name "Mylib") (type "KiCad") (uri "C:/Users/AnhDungTann/Documents/KiCad/9.0/footprints/Mylib.pretty") (options "") (descr ""))
+	(lib (name "Mylib") (type "KiCad") (uri "C:/Users/AnhDungTann/Documents/KiCad/9.0/footprints/Mylib.pretty") (options "") (descr ""))
+	(lib (name "Mylib") (type "KiCad") (uri "C:/Users/AnhDungTann/Documents/KiCad/10.0/footprints/Mylib.pretty") (options "") (descr ""))
+)
